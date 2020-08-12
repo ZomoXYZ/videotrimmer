@@ -1,0 +1,629 @@
+@font-face {
+    font-family: OpenSans-Bold;
+    src: url(./resources/Open_Sans/OpenSans-Bold.ttf);
+}
+@font-face {
+    font-family: OpenSans-BoldItalic;
+    src: url(./resources/Open_Sans/OpenSans-BoldItalic.ttf);
+}
+@font-face {
+    font-family: OpenSans-ExtraBold;
+    src: url(./resources/Open_Sans/OpenSans-ExtraBold.ttf);
+}
+@font-face {
+    font-family: OpenSans-ExtraBoldItalic;
+    src: url(./resources/Open_Sans/OpenSans-ExtraBoldItalic.ttf);
+}
+@font-face {
+    font-family: OpenSans-Italic;
+    src: url(./resources/Open_Sans/OpenSans-Italic.ttf);
+}
+@font-face {
+    font-family: OpenSans-Light;
+    src: url(./resources/Open_Sans/OpenSans-Light.ttf);
+}
+@font-face {
+    font-family: OpenSans-LightItalic;
+    src: url(./resources/Open_Sans/OpenSans-LightItalic.ttf);
+}
+@font-face {
+    font-family: OpenSans-Regular;
+    src: url(./resources/Open_Sans/OpenSans-Regular.ttf);
+}
+@font-face {
+    font-family: OpenSans-SemiBold;
+    src: url(./resources/Open_Sans/OpenSans-SemiBold.ttf);
+}
+@font-face {
+    font-family: OpenSans-SemiBoldItalic;
+    src: url(./resources/Open_Sans/OpenSans-SemiBoldItalic.ttf);
+}
+
+[theme=light] {
+    --background: #fff;
+    --color: #000;
+    --button-background: #ddd;
+    --button-border: #bbb;
+    --button-hover-bg: #ccc;
+    --button-active-bg: #eee;
+}
+[theme=dark] {
+    --background: #434442;
+    --color: #ddd;
+    --button-background: #666;
+    --button-border: #888;
+    --button-hover-bg: #777;
+    --button-active-bg: #555;
+}
+
+html {
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+}
+
+* {
+    font-family: OpenSans-Regular;
+    user-select: none;
+    
+    transition: color 200ms ease-in-out,
+        background 200ms ease-in-out;
+    
+    box-sizing: inherit;
+    
+    &:before,
+    &:after {
+        box-sizing: inherit;
+    }
+}
+
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    cursor: default;
+    
+    font-size: 24px;
+    
+    background: var(--background);
+    color: var(--color);
+    
+    & > div {
+        transition: opacity 150ms ease-in;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+}
+
+/* order:
+ * 
+ * general
+ * 
+ * upload screen
+ * processing video
+ * editing page
+ * loading edits
+ * error
+ * hover
+ * 
+ */
+
+/*general*/
+.button {
+    margin-top: 3px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    
+    background: var(--button-background);
+    border: 1px solid var(--button-border);
+    
+    &:hover {
+        background: var(--button-hover-bg);
+    }
+    &:active {
+        background: var(--button-active-bg);
+    }
+    input {
+        display: none;
+    }
+}
+/* https://codepen.io/aaroniker/pen/PowZbgb */
+.checkbox {
+    --background: var(--color);
+    [theme=light] & {
+        --background: #bbb;
+    }
+    --border: transparent;
+    --border-hover: var(--button-hover-bg);
+    --border-active: var(--button-background);
+    --tick: var(--color);
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    
+    &.smaller {
+        transform: scale(.7);
+    }
+    
+    input,
+    svg {
+        width: 21px;
+        height: 21px;
+        display: block;
+    }
+    input {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        position: relative;
+        outline: none;
+        background: var(--background);
+        border: none;
+        margin: 0;
+        margin-right: 5px;
+        padding: 0;
+        border-radius: 4px;
+        transition: box-shadow 0.3s,
+            background 200ms ease-in-out;
+        box-shadow: inset 0 0 0 var(--s, 1px) var(--b, var(--border));
+        display: inline-block;
+        &:hover {
+            --s: 2px;
+            --b: var(--border-hover);
+        }
+        &:checked {
+            --b: var(--border-active);
+        }
+    }
+    svg {
+        pointer-events: none;
+        fill: none;
+        stroke-width: 2px;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke: var(--stroke, var(--border-active));
+        position: absolute;
+        top: 1px;
+        left: 0;
+        width: 21px;
+        height: 21px;
+        transform: scale(0) translateZ(0);
+    }
+    --stroke: var(--tick);
+    input:checked {
+        --s: 11px;
+        & + svg {
+            transition: transform 400ms ease-out;
+            transform: scale(1) translateZ(0);
+        }
+    }
+    input:disabled {
+        background: var(--border-hover);
+        
+        & ~ span {
+            color: var(--border-hover);
+        }
+    }
+    span {
+        transition: color 200ms ease-in-out
+    }
+}
+
+/*upload screen*/
+#uploadVideo {
+    opacity: 1;
+    pointer-events: all;
+}
+#processingVideo {
+    opacity: 0;
+    pointer-events: none;
+}
+#editor {
+    opacity: 0;
+    pointer-events: none;
+}
+#editsprogress {
+    opacity: 0;
+    pointer-events: none;
+}
+#error {
+    opacity: 0;
+    pointer-events: none;
+}
+#hoveringVideo {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/*processing video*/
+.processing {
+    #uploadVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #processingVideo {
+        opacity: 1;
+        pointer-events: all;
+    }
+    #editor {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #editsprogress {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #error {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #hoveringVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
+/*editing page*/
+.editor {
+    #uploadVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #processingVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #editor {
+        opacity: 1;
+        pointer-events: all;
+    }
+    #editsprogress {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #error {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #hoveringVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
+#editor {
+    padding: 15px;
+    box-sizing: border-box;
+    justify-content: flex-start;
+    
+    video {
+        width: 100%;
+    }
+    
+    #playbackDetails {
+        padding-top: 45px;
+        width: 100%;
+        
+        #videoBar {
+            width: 100%;
+            height: 2px;
+            display: inline-block;
+            position: relative;
+            
+            background: var(--color);
+            
+            .position {
+                width: 2px;
+                height: 20px;
+                position: absolute;
+                top: -20px;
+            
+                background: var(--color);
+                
+                &::after {
+                    content: '';
+                    display: inline-block;
+                    width: 12px;
+                    height: 12px;
+                    border-radius: 6px;
+                    margin-left: -5px;
+                    margin-top: -5px;
+                    
+                    background: var(--color);
+                }
+            }
+            
+            .trimstart {
+                width: 2px;
+                height: 5px;
+                position: absolute;
+                top: -5px;
+                
+                &::after {
+                    content: '';
+                    display: inline-block;
+                    width: 6px;
+                    height: 12px;
+                    border-radius: 2px 0px 0px 2px;
+                    margin-left: -6px;
+                    margin-top: -5px;
+                    border-right: 2px solid #666;
+                    box-sizing: border-box;
+                    
+                    [theme=light] & {
+                        background: #f90;
+                    }
+                    [theme=dark] & {
+                        background: #dd4;
+                    }
+                }
+            }
+
+            .trimend {
+                width: 2px;
+                height: 5px;
+                position: absolute;
+                top: -5px;
+                
+                &::after {
+                    content: '';
+                    display: inline-block;
+                    width: 6px;
+                    height: 12px;
+                    border-radius: 0px 2px 2px 0px;
+                    margin-left: 0px;
+                    margin-top: -5px;
+                    border-left: 2px solid #666;
+                    box-sizing: border-box;
+                    
+                    [theme=light] & {
+                        background: #f90;
+                    }
+                    [theme=dark] & {
+                        background: #dd4;
+                    }
+                }
+            }
+        }
+        
+        .line2 {
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        #currentTime {
+            margin-right: 10px;
+        }
+        #volumeBar {
+            width: 100px;
+            height: 2px;
+            right: 0;
+            display: inline-block;
+            position: absolute;
+            justify-self: flex-end;
+
+            [theme=light] & {
+                background: #000;
+            }
+            [theme=dark] & {
+                background: #ddd;
+            }
+
+            .position {
+                width: 2px;
+                height: 2px;
+                position: absolute;
+
+                [theme=light] & {
+                    background: #000;
+                }
+                [theme=dark] & {
+                    background: #ddd;
+                }
+                &::after {
+                    content: '';
+                    display: inline-block;
+                    width: 12px;
+                    height: 12px;
+                    border-radius: 6px;
+                    margin-left: -5px;
+                    margin-top: -5px;
+
+                    [theme=light] & {
+                        background: #000;
+                    }
+                    [theme=dark] & {
+                        background: #ddd;
+                    }
+                }
+            }
+        }
+    }
+        
+    #quickoptions {
+        margin-top: 15px;
+        width: 100%;
+        font-size: 18px;
+    }
+    
+    #finish {
+        padding-top: 15px;
+    }
+}
+
+/*loading edits*/
+.editsprogress {
+    #uploadVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #processingVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #editor {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #editsprogress {
+        opacity: 1;
+        pointer-events: all;
+    }
+    #error {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #hoveringVideo {
+        opacity: 0;
+        pointer-events: none;
+    }   
+}
+
+#editsprogress {
+    
+    #progress {
+        width: 100%;
+        height: 33%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        
+        /* https://codepen.io/traf/pen/oKbaqQ */
+        .progressbar {
+            background: var(--button-background);
+            justify-content: flex-start;
+            border-radius: 100px;
+            align-items: center;
+            position: relative;
+            padding: 0 5px;
+            display: flex;
+            height: 40px;
+            width: 75%;
+            transition: width 250ms ease-out,
+                height 250ms ease-out;
+
+            .progressinner {
+                animation: load 3s normal forwards;
+                box-shadow: 0 10px 40px -10px var(--color);
+                border-radius: 100px;
+                background: var(--color);
+                height: 30px;
+                width: 0%;
+                transition: width 250ms ease-in-out,
+                    height 250ms ease-out;
+            }
+            
+            &.finished {
+                width: 60px;
+                height: 60px;
+                
+                .progressinner {
+                    width: 100%;
+                    height: 50px;
+                }
+            }
+        }
+    }
+    
+    #consoleoutput {
+        width: 100%;
+        height: 67%;
+        padding: 15px;
+        
+        pre {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 5px;
+            height: 100%;
+            width: 100%;
+            background: var(--button-background);
+            overflow: scroll;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-wrap: break-word;
+            word-break: break-all;
+            white-space: pre-wrap;
+            
+            user-select: initial;
+        }
+    }
+}
+
+/*error*/
+.error {
+    #uploadVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #processingVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #editor {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #editsprogress {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #error {
+        opacity: 1;
+        pointer-events: all;
+    }
+    #hoveringVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
+#error {
+    .bold {
+        font-family: OpenSans-Bold;
+        font-size: 48px;
+        
+        [theme=light] & {
+            color: #d77;
+        }
+        [theme=dark] & {
+            color: #f99;
+        }
+    }
+    & .small {
+        font-size: 16px;
+    }
+}
+
+/*hovering over with image screen*/
+.hoveringVideo {
+    #uploadVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #processingVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #editor {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #editsprogress {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #error {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #hoveringVideo {
+        opacity: 1;
+        pointer-events: all;
+    }
+}
