@@ -1,5 +1,4 @@
-const ipc = require('electron').ipcRenderer,
-      webFrame = require('electron').webFrame,
+const {ipcRenderer, webFrame} = require('electron'),
       mime = require('mime'),
       getMimeType = str => mime.getType(str) || '',
       os = require('os'),
@@ -43,13 +42,15 @@ function getAppDataPath() {
 }
 
 webFrame.setVisualZoomLevelLimits(1, 1);
-webFrame.setLayoutZoomLevelLimits(0, 0);
 
 if (!fs.existsSync(ffDir))
-    ipc.send('exit', 'OS IS NOT SET UP');
+    ipcRenderer.send('exit', 'OS IS NOT SET UP');
 
 addEventListener('load', () => {
     
+    document.querySelector('#error .small').addEventListener('click', () => {
+        ipcRenderer.send('devtools');
+    });
     
     var videoPos = 0,
         trimStartPos = 0,
@@ -78,7 +79,7 @@ addEventListener('load', () => {
         setTimeout(() => {
             if (!draggedover)
                 document.body.classList.remove('hoveringVideo');
-        }, 1);
+        }, 10);
     });
     document.addEventListener('drop', e => {
         if (!blockFile) {
@@ -138,6 +139,7 @@ addEventListener('load', () => {
             console.log(`child process exited with code ${code}`);
             output = JSON.parse(output);
             console.log(output);
+            
             displayEditor(file, output);
         });
         
@@ -224,6 +226,13 @@ addEventListener('load', () => {
         };
         
         console.log(data);
+            
+        document.querySelectorAll('#quickoptions input').forEach(input => {
+            if (input.hasAttribute('a:channels') && parseInt(input.getAttribute('a:channels')) !== data.streams.audio.length)
+                input.parentElement.classList.add('disabled');
+            else
+                input.parentElement.classList.remove('disabled');
+        });
         
         video.setAttribute('src', file.path);
         
@@ -388,11 +397,15 @@ addEventListener('load', () => {
         volumeDragging = false;
     });
     
+    let currentFramePlay = null;
+    
     const keysHolding = {
         ArrowLeft: () => {
+            video.pause();
             video.currentTime = videoPos = Math.max(trimStartPos, video.currentTime - (1/data.streams.primary.video.framerate));
         },
         ArrowRight: () => {
+            video.pause();
             video.currentTime = videoPos = Math.min(trimEndPos, video.currentTime + (1/data.streams.primary.video.framerate));
         },
         ArrowUp: () => {
@@ -425,7 +438,7 @@ addEventListener('load', () => {
     };
     
     document.addEventListener('keydown', e => {
-        if (e.key in keysHolding) {
+        if (document.body.classList.contains('editor') && e.key in keysHolding) {
             e.preventDefault();
             keysHolding[e.key]();
         }
@@ -458,6 +471,8 @@ addEventListener('load', () => {
     document.querySelector('#finish .button').addEventListener('click', finishButton);
     
     function finishButton() {
+        video.pause();
+        
         document.body.classList.remove('editor');
         document.body.classList.add('editsprogress');
         
@@ -488,7 +503,7 @@ addEventListener('load', () => {
                 frameCount = Math.floor((trimEndPos-trimStartPos)/(1/data.streams.primary.video.framerate));
             
             ffmpegShell.stderr.on('data', stdout => {
-                let toScroll = Math.abs(document.querySelector('#consoleoutput pre').scrollTop - (document.querySelector('#consoleoutput pre').scrollHeight - document.querySelector('#consoleoutput pre').getBoundingClientRect().height)) < 10;
+                let toScroll = Math.abs(document.querySelector('#consoleoutput pre').scrollTop - (document.querySelector('#consoleoutput pre').scrollHeight - document.querySelector('#consoleoutput pre').getBoundingClientRect().height)) < 25;
 
                 console.info(stdout.toString());
                 preOutput.textContent+= '\n'+stdout;
@@ -524,19 +539,22 @@ addEventListener('load', () => {
         //output: data.path.dir+'/'+data.path.name+'_edited'+data.path.ext
         //output compress as second file: data.path.dir+data.path.name+'_edited_compressed'+data.path.ext
         
+        
         blockFile = true;
+        
+        //this entire thing needs to be made better
         
         let command = [],
             secondCommand = [];
         
-        ['-i', data.path.dir+'/'+data.path.name+data.path.ext, '-b:v', '5000k', '/Users/jaketr00/Downloads/node compression test.mp4', '-y']
+        //['-i', data.path.dir+'/'+data.path.name+data.path.ext, '-b:v', '5000k', '/Users/jaketr00/Downloads/node compression test.mp4', '-y']
         
-        if (document.getElementById('fixmic').checked)
-            command = ['-filter_complex', '[0:a:1] afftdn=nt=w:om=o:tr= [l] ; [l] agate=threshold=.035 [l] ; [0:a:0] [l] amix=inputs=2 [a]', '-map', '0:v:0', '-map', '[a]', '-c:v', 'copy'];
-        else if (document.getElementById('onlygame').checked)
-            command = ['-map', '0:v:0', '-map', '0:a:0', '-acodec', 'copy', '-vcodec', 'copy'];
-        else
-            command = ['-acodec', 'copy', '-vcodec', 'copy'];
+        if (!document.getElementById('fixmic').parentElement.classList.contains('disabled')
+            && document.getElementById('fixmic').checked)
+            command = ['-filter_complex', '[0:a:1] afftdn=nt=w:om=o:tr= [l] ; [l] agate=threshold=.035 [l] ; [0:a:0] [l] amix=inputs=2 [a]', '-map', '0:v:0', '-map', '[a]'];
+        else if (!document.getElementById('onlygame').parentElement.classList.contains('disabled')
+            && document.getElementById('onlygame').checked)
+            command = ['-map', '0:v:0', '-map', '0:a:0'];
         
         if (document.getElementById('tocompress').checked) {
             
@@ -545,7 +563,8 @@ addEventListener('load', () => {
             } else
                 command = [...command, '-b:v', '5000k'];
             
-        }
+        } /*else
+            command = [...command, '-acodec', 'copy', '-vcodec', 'copy'];*/
         
         command = ['-ss', trimStartPos, '-to', trimEndPos, ...command];
         
@@ -569,9 +588,9 @@ addEventListener('load', () => {
         
     }
 
-    ipc.on('', (event, arg) => {
+    ipcRenderer.on('', (event, arg) => {
         
     });
-    ipc.send('', {});
+    ipcRenderer.send('', {});
 
 });

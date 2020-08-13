@@ -88,7 +88,7 @@ body {
     background: var(--background);
     color: var(--color);
     
-    & > div {
+    > div {
         transition: opacity 150ms ease-in;
         display: flex;
         flex-direction: column;
@@ -135,7 +135,7 @@ body {
     }
 }
 /* https://codepen.io/aaroniker/pen/PowZbgb */
-.checkbox {
+.checkbox > label {
     --background: var(--color);
     [theme=light] & {
         --background: #bbb;
@@ -198,7 +198,7 @@ body {
     --stroke: var(--tick);
     input:checked {
         --s: 11px;
-        & + svg {
+        + svg {
             transition: transform 400ms ease-out;
             transform: scale(1) translateZ(0);
         }
@@ -206,7 +206,7 @@ body {
     input:disabled {
         background: var(--border-hover);
         
-        & ~ span {
+        ~ span {
             color: var(--border-hover);
         }
     }
@@ -450,6 +450,10 @@ body {
         margin-top: 15px;
         width: 100%;
         font-size: 18px;
+        
+        label.disabled {
+            display: none;
+        }
     }
     
     #finish {
@@ -543,7 +547,8 @@ body {
             height: 100%;
             width: 100%;
             background: var(--button-background);
-            overflow: scroll;
+            overflow-x: hidden;
+            overflow-y: scroll;
             font-family: monospace;
             font-size: 12px;
             overflow-wrap: break-word;
@@ -595,8 +600,12 @@ body {
             color: #f99;
         }
     }
-    & .small {
+    .small {
         font-size: 16px;
+        
+        &:hover {
+            text-decoration: underline;
+        }
     }
 }
 

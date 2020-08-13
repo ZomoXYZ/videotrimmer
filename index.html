@@ -1,6 +1,6 @@
 <link rel="stylesheet" href="index.css">
 <script src="index.js"></script>
-<body theme="dark">
+<body theme="dark" class="editor">
     <div id="uploadVideo">
         <div>Drag Video To Edit</div>
         <div>or</div>
@@ -29,36 +29,40 @@
             </div>
         </div>
         <div id="quickoptions">
-            <label class="checkbox">
-                <input type="checkbox" id="fixmic">
-                <svg viewBox="0 0 21 21">
-                    <polyline points="5 10.75 8.5 14.25 16 6"></polyline>
-                </svg>
-                <span>Fix Mic and Combine Audio</span>
-            </label>
-            <br>
-            <label class="checkbox">
-                <input type="checkbox" id="onlygame">
-                <svg viewBox="0 0 21 21">
-                    <polyline points="5 10.75 8.5 14.25 16 6"></polyline>
-                </svg>
-                <span>Only Game Audio</span>
-            </label>
-            <br>
-            <label class="checkbox">
-                <input type="checkbox" id="tocompress">
-                <svg viewBox="0 0 21 21">
-                    <polyline points="5 10.75 8.5 14.25 16 6"></polyline>
-                </svg>
-                <span>Compress</span>
-            </label>
-            <label class="checkbox smaller">
-                <input type="checkbox" id="compresssecondfile" disabled>
-                <svg viewBox="0 0 21 21">
-                    <polyline points="5 10.75 8.5 14.25 16 6"></polyline>
-                </svg>
-                <span>as another file</span>
-            </label>
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" id="fixmic" a:channels="2">
+                    <svg viewBox="0 0 21 21">
+                        <polyline points="5 10.75 8.5 14.25 16 6"></polyline>
+                    </svg>
+                    <span>Fix Mic and Combine Audio</span>
+                </label>
+            </div>
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" id="onlygame" a:channels="2">
+                    <svg viewBox="0 0 21 21">
+                        <polyline points="5 10.75 8.5 14.25 16 6"></polyline>
+                    </svg>
+                    <span>Only Game Audio</span>
+                </label>
+            </div>
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" id="tocompress">
+                    <svg viewBox="0 0 21 21">
+                        <polyline points="5 10.75 8.5 14.25 16 6"></polyline>
+                    </svg>
+                    <span>Compress</span>
+                </label>
+                <label class="smaller">
+                    <input type="checkbox" id="compresssecondfile" disabled>
+                    <svg viewBox="0 0 21 21">
+                        <polyline points="5 10.75 8.5 14.25 16 6"></polyline>
+                    </svg>
+                    <span>as another file</span>
+                </label>
+            </div>
             <!--compress checkbox-->
             <!--allow to compress as a second file-->
             <!--fix mic/combine audio tracks-->
@@ -82,7 +86,7 @@
     </div>
     <div id="error">
         <div class="bold">ERROR</div>
-        <div class="small">please check the console</div>
+        <div class="small">click here to open the console</div>
     </div>
     <div id="hoveringVideo">
         <div>Release To Edit</div>
