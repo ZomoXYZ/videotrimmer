@@ -125,7 +125,7 @@ body > div {
 }
 
 /* https://codepen.io/aaroniker/pen/PowZbgb */
-.checkbox {
+.checkbox > label {
   --background: var(--color);
   --border: transparent;
   --border-hover: var(--button-hover-bg);
@@ -136,19 +136,19 @@ body > div {
   align-items: center;
   --stroke: var(--tick);
 }
-[theme=light] .checkbox {
+[theme=light] .checkbox > label {
   --background: #bbb;
 }
-.checkbox.smaller {
+.checkbox > label.smaller {
   transform: scale(0.7);
 }
-.checkbox input,
-.checkbox svg {
+.checkbox > label input,
+.checkbox > label svg {
   width: 21px;
   height: 21px;
   display: block;
 }
-.checkbox input {
+.checkbox > label input {
   -webkit-appearance: none;
   -moz-appearance: none;
   position: relative;
@@ -163,14 +163,14 @@ body > div {
   box-shadow: inset 0 0 0 var(--s, 1px) var(--b, var(--border));
   display: inline-block;
 }
-.checkbox input:hover {
+.checkbox > label input:hover {
   --s: 2px;
   --b: var(--border-hover);
 }
-.checkbox input:checked {
+.checkbox > label input:checked {
   --b: var(--border-active);
 }
-.checkbox svg {
+.checkbox > label svg {
   pointer-events: none;
   fill: none;
   stroke-width: 2px;
@@ -184,20 +184,20 @@ body > div {
   height: 21px;
   transform: scale(0) translateZ(0);
 }
-.checkbox input:checked {
+.checkbox > label input:checked {
   --s: 11px;
 }
-.checkbox input:checked + svg {
+.checkbox > label input:checked + svg {
   transition: transform 400ms ease-out;
   transform: scale(1) translateZ(0);
 }
-.checkbox input:disabled {
+.checkbox > label input:disabled {
   background: var(--border-hover);
 }
-.checkbox input:disabled ~ span {
+.checkbox > label input:disabled ~ span {
   color: var(--border-hover);
 }
-.checkbox span {
+.checkbox > label span {
   transition: color 200ms ease-in-out;
 }
 
@@ -418,6 +418,9 @@ body > div {
   margin-top: 15px;
   width: 100%;
   font-size: 18px;
+}
+#editor #quickoptions .checkbox.disabled {
+  display: none;
 }
 #editor #finish {
   padding-top: 15px;

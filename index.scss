@@ -135,7 +135,7 @@ body {
     }
 }
 /* https://codepen.io/aaroniker/pen/PowZbgb */
-.checkbox {
+.checkbox > label {
     --background: var(--color);
     [theme=light] & {
         --background: #bbb;
@@ -450,6 +450,10 @@ body {
         margin-top: 15px;
         width: 100%;
         font-size: 18px;
+        
+        .checkbox.disabled {
+            display: none;
+        }
     }
     
     #finish {
