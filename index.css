@@ -419,7 +419,7 @@ body > div {
   width: 100%;
   font-size: 18px;
 }
-#editor #quickoptions .checkbox.disabled {
+#editor #quickoptions label.disabled {
   display: none;
 }
 #editor #finish {

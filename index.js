@@ -229,9 +229,9 @@ addEventListener('load', () => {
             
         document.querySelectorAll('#quickoptions input').forEach(input => {
             if (input.hasAttribute('a:channels') && parseInt(input.getAttribute('a:channels')) !== data.streams.audio.length)
-                input.parentElement.parentElement.classList.add('disabled');
+                input.parentElement.classList.add('disabled');
             else
-                input.parentElement.parentElement.classList.remove('disabled');
+                input.parentElement.classList.remove('disabled');
         });
         
         video.setAttribute('src', file.path);
@@ -539,17 +539,20 @@ addEventListener('load', () => {
         //output: data.path.dir+'/'+data.path.name+'_edited'+data.path.ext
         //output compress as second file: data.path.dir+data.path.name+'_edited_compressed'+data.path.ext
         
+        
         blockFile = true;
+        
+        //this entire thing needs to be made better
         
         let command = [],
             secondCommand = [];
         
         //['-i', data.path.dir+'/'+data.path.name+data.path.ext, '-b:v', '5000k', '/Users/jaketr00/Downloads/node compression test.mp4', '-y']
         
-        if (!document.getElementById('fixmic').parentElement.parentElement.classList.contains('disabled')
+        if (!document.getElementById('fixmic').parentElement.classList.contains('disabled')
             && document.getElementById('fixmic').checked)
             command = ['-filter_complex', '[0:a:1] afftdn=nt=w:om=o:tr= [l] ; [l] agate=threshold=.035 [l] ; [0:a:0] [l] amix=inputs=2 [a]', '-map', '0:v:0', '-map', '[a]'];
-        else if (!document.getElementById('onlygame').parentElement.parentElement.classList.contains('disabled')
+        else if (!document.getElementById('onlygame').parentElement.classList.contains('disabled')
             && document.getElementById('onlygame').checked)
             command = ['-map', '0:v:0', '-map', '0:a:0'];
         
@@ -560,8 +563,8 @@ addEventListener('load', () => {
             } else
                 command = [...command, '-b:v', '5000k'];
             
-        } else
-            command = [...command, '-acodec', 'copy', '-vcodec', 'copy'];
+        } /*else
+            command = [...command, '-acodec', 'copy', '-vcodec', 'copy'];*/
         
         command = ['-ss', trimStartPos, '-to', trimEndPos, ...command];
         
