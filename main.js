@@ -3,9 +3,17 @@ const {app, BrowserWindow, ipcMain, Tray, nativeImage} = require('electron'),
       url = require('url'),
       fs = require('fs');
 
+let mainWindow;
+
 ipcMain.on('exit', (event, arg) => {
     console.error(arg);
     process.exit(1);
+});
+
+ipcMain.on('devtools', event => { //is there a way to do this without ipc?
+    event.sender.openDevTools({
+        mode: 'detach'
+    });
 });
 
 function getAppDataPath() {
@@ -29,8 +37,6 @@ function getAppDataPath() {
 if (!fs.existsSync(getAppDataPath()))
     fs.mkdirSync(getAppDataPath());
 
-let mainWindow;
-
 //https://electron.atom.io/docs/tutorial/quick-start/
 function createWindow() {
         
@@ -41,7 +47,14 @@ function createWindow() {
         
         mainWindow = new BrowserWindow({
             width: 530, height: 560,
-            minWidth: 200, minHeight: 200
+            minWidth: 200, minHeight: 200,
+            backgroundColor: '#434442',
+            darkTheme: true,
+            titleBarStyle: 'default',
+            webPreferences: {
+                nodeIntegration: true,
+                worldSafeExecuteJavaScript: true
+            }
         });
 
         mainWindow.loadURL(url.format({

@@ -1,5 +1,4 @@
-const ipc = require('electron').ipcRenderer,
-      webFrame = require('electron').webFrame,
+const {ipcRenderer, webFrame} = require('electron'),
       mime = require('mime'),
       getMimeType = str => mime.getType(str) || '',
       os = require('os'),
@@ -43,13 +42,15 @@ function getAppDataPath() {
 }
 
 webFrame.setVisualZoomLevelLimits(1, 1);
-webFrame.setLayoutZoomLevelLimits(0, 0);
 
 if (!fs.existsSync(ffDir))
-    ipc.send('exit', 'OS IS NOT SET UP');
+    ipcRenderer.send('exit', 'OS IS NOT SET UP');
 
 addEventListener('load', () => {
     
+    document.querySelector('#error .small').addEventListener('click', () => {
+        ipcRenderer.send('devtools');
+    });
     
     var videoPos = 0,
         trimStartPos = 0,
@@ -78,7 +79,7 @@ addEventListener('load', () => {
         setTimeout(() => {
             if (!draggedover)
                 document.body.classList.remove('hoveringVideo');
-        }, 1);
+        }, 10);
     });
     document.addEventListener('drop', e => {
         if (!blockFile) {
@@ -388,12 +389,22 @@ addEventListener('load', () => {
         volumeDragging = false;
     });
     
+    let currentFramePlay = null;
+    
     const keysHolding = {
         ArrowLeft: () => {
+            if (currentFramePlay)
+                clearTimeout(currentFramePlay);
+            currentFramePlay = setTimeout(() => video.pause(), 1/data.streams.primary.video.framerate);
             video.currentTime = videoPos = Math.max(trimStartPos, video.currentTime - (1/data.streams.primary.video.framerate));
+            video.play();
         },
         ArrowRight: () => {
+            if (currentFramePlay)
+                clearTimeout(currentFramePlay);
+            currentFramePlay = setTimeout(() => video.pause(), 1/data.streams.primary.video.framerate);
             video.currentTime = videoPos = Math.min(trimEndPos, video.currentTime + (1/data.streams.primary.video.framerate));
+            video.play();
         },
         ArrowUp: () => {
             video.volume = Math.min(1, video.volume + .05);
@@ -425,7 +436,7 @@ addEventListener('load', () => {
     };
     
     document.addEventListener('keydown', e => {
-        if (e.key in keysHolding) {
+        if (document.body.classList.contains('editor') && e.key in keysHolding) {
             e.preventDefault();
             keysHolding[e.key]();
         }
@@ -458,6 +469,8 @@ addEventListener('load', () => {
     document.querySelector('#finish .button').addEventListener('click', finishButton);
     
     function finishButton() {
+        video.pause();
+        
         document.body.classList.remove('editor');
         document.body.classList.add('editsprogress');
         
@@ -488,7 +501,7 @@ addEventListener('load', () => {
                 frameCount = Math.floor((trimEndPos-trimStartPos)/(1/data.streams.primary.video.framerate));
             
             ffmpegShell.stderr.on('data', stdout => {
-                let toScroll = Math.abs(document.querySelector('#consoleoutput pre').scrollTop - (document.querySelector('#consoleoutput pre').scrollHeight - document.querySelector('#consoleoutput pre').getBoundingClientRect().height)) < 10;
+                let toScroll = Math.abs(document.querySelector('#consoleoutput pre').scrollTop - (document.querySelector('#consoleoutput pre').scrollHeight - document.querySelector('#consoleoutput pre').getBoundingClientRect().height)) < 25;
 
                 console.info(stdout.toString());
                 preOutput.textContent+= '\n'+stdout;
@@ -529,10 +542,10 @@ addEventListener('load', () => {
         let command = [],
             secondCommand = [];
         
-        ['-i', data.path.dir+'/'+data.path.name+data.path.ext, '-b:v', '5000k', '/Users/jaketr00/Downloads/node compression test.mp4', '-y']
+        //['-i', data.path.dir+'/'+data.path.name+data.path.ext, '-b:v', '5000k', '/Users/jaketr00/Downloads/node compression test.mp4', '-y']
         
         if (document.getElementById('fixmic').checked)
-            command = ['-filter_complex', '[0:a:1] afftdn=nt=w:om=o:tr= [l] ; [l] agate=threshold=.035 [l] ; [0:a:0] [l] amix=inputs=2 [a]', '-map', '0:v:0', '-map', '[a]', '-c:v', 'copy'];
+            command = ['-filter_complex', '[0:a:1] afftdn=nt=w:om=o:tr= [l] ; [l] agate=threshold=.035 [l] ; [0:a:0] [l] amix=inputs=2 [a]', '-map', '0:v:0', '-map', '[a]'];
         else if (document.getElementById('onlygame').checked)
             command = ['-map', '0:v:0', '-map', '0:a:0', '-acodec', 'copy', '-vcodec', 'copy'];
         else
@@ -545,6 +558,8 @@ addEventListener('load', () => {
             } else
                 command = [...command, '-b:v', '5000k'];
             
+        } else {
+            command = [...command, '-acodec', 'copy', '-vcodec', 'copy'];
         }
         
         command = ['-ss', trimStartPos, '-to', trimEndPos, ...command];
@@ -569,9 +584,9 @@ addEventListener('load', () => {
         
     }
 
-    ipc.on('', (event, arg) => {
+    ipcRenderer.on('', (event, arg) => {
         
     });
-    ipc.send('', {});
+    ipcRenderer.send('', {});
 
 });

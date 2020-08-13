@@ -1,6 +1,6 @@
 {
     "name": "videotrimmer",
-    "version": "0.1",
+    "version": "0.0.1",
     "license": "MIT",
     "description": "easy video trimmer",
     "author": {
@@ -47,8 +47,8 @@
         "dist": "electron-builder"
     },
     "devDependencies": {
-        "electron": "^1.8.8",
-        "electron-builder": "^22.7.0"
+        "electron": "^9.2.0",
+        "electron-builder": "^22.8.0"
     },
     "dependencies": {
         "ffbinaries": "^1.1.4",
