@@ -52,6 +52,13 @@ addEventListener('load', () => {
         ipcRenderer.send('devtools');
     });
     
+    //html's "video/*" sucks so this accepts all actual videos
+    var videoExts = [];
+    for (let ext in mime._types)
+        if (mime._types[ext].startsWith('video/'))
+            videoExts.push('.'+ext);
+    document.getElementById('fileupload').setAttribute('accept', videoExts.join(','));
+    
     var videoPos = 0,
         trimStartPos = 0,
         trimEndPos = 0,
