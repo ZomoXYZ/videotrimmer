@@ -8,6 +8,13 @@
 
 ## changelog
 
+### v0.0.3 (in progress)
+
+**fixes**
+
+- reorganizing `index.js` code
+- commenting `index.js`
+
 ### v0.0.2
 
 **fixes**

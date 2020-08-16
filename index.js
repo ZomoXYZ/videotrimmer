@@ -1,12 +1,13 @@
+//basic variables
 const {ipcRenderer, webFrame} = require('electron'),
       mime = require('mime'),
-      getMimeType = str => mime.getType(str) || '',
+      getMimeType = str => mime.getType(str) || '', //mime.getType() return null if no result, empty string is easier for my usage
       os = require('os'),
       fs = require('fs'),
       path = require('path'),
       shell = require('child_process'),
       
-      secondsToTime = seconds => {
+      secondsToTime = seconds => { //1000 (seconds) -> 16:40 (minutes:seconds)
           seconds = Math.floor(seconds);
           seconds = Math.max(0, seconds);
           var minutes = Math.floor(seconds / 60);
@@ -23,34 +24,48 @@ const {ipcRenderer, webFrame} = require('electron'),
       ffmpegDir = path.join(ffDir, 'ffmpeg'),
       ffprobeDir = path.join(ffDir, 'ffprobe');
 
+//Location to store ffmpeg binaries
 function getAppDataPath() {
-     switch (process.platform) {
+    switch (process.platform) {
         case 'darwin': {
             return path.join(process.env.HOME, 'Library', 'Application Support', 'Ashley-VideoTrimmer');
         }
-         case 'win32': {
-             return path.join(process.env.APPDATA, 'Ashley-VideoTrimmer');
-         }
-         case 'linux': {
-             return path.join(process.env.HOME, '.Ashley-VideoTrimmer');
-         }
-         default: {
-             console.log('Unsupported platform!');
-             process.exit(1);
-         }
-     }
+        case 'win32': {
+            return path.join(process.env.APPDATA, 'Ashley-VideoTrimmer');
+        }
+        case 'linux': {
+            return path.join(process.env.HOME, '.Ashley-VideoTrimmer');
+        }
+        default: {
+            ipcRenderer.send('exit', 'Unsupported platform');
+        }
+    }
 }
 
+//prevent zooming
 webFrame.setVisualZoomLevelLimits(1, 1);
 
+//in case an error happened in main.js
 if (!fs.existsSync(ffDir))
     ipcRenderer.send('exit', 'OS IS NOT SET UP');
 
 addEventListener('load', () => {
     
-    document.querySelector('#error .small').addEventListener('click', () => {
-        ipcRenderer.send('devtools');
+    //declarations outside of page scope
+    const videoEditor = require('./modules/editor.js')(document.querySelector('#editor video'), () => {
+        blockFile = false;
     });
+    
+    /* general declarations by page
+     * 
+     * upload screen/hover
+     * processing video
+     * editing page
+     * loading edits
+     * error
+     */
+    
+    /* upload screen/hover */
     
     //html's "video/*" sucks so this accepts all actual videos
     var videoExts = [];
@@ -59,19 +74,9 @@ addEventListener('load', () => {
             videoExts.push('.'+ext);
     document.getElementById('fileupload').setAttribute('accept', videoExts.join(','));
     
-    var videoPos = 0,
-        trimStartPos = 0,
-        trimEndPos = 0,
-        videoPositionDragging = false,
-        trimStartDragging = false,
-        trimEndDragging = false,
-        volumeDragging = false,
-        savedLeftPosition = 0;
+    var blockFile = false, //should block file from being dragged over
+        draggedover = false;
     
-    var blockFile = false;
-    
-    let draggedover = false;
-
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         document.addEventListener(eventName, e => {e.preventDefault();e.stopPropagation();}, false); //prevent defualt
     });
@@ -106,14 +111,7 @@ addEventListener('load', () => {
     function handleFiles(files) {
         document.body.setAttribute('class', 'processing');
         
-        videoPos = 0;
-        trimStartPos = 0;
-        trimEndPos = 0;
-        videoPositionDragging = false;
-        trimStartDragging = false;
-        trimEndDragging = false;
-        volumeDragging = false;
-        savedLeftPosition = 0;
+        videoEditor.open(document.querySelector('#editor video'));
         
         document.querySelector('#progress .progressbar').classList.remove('finished');
 
@@ -126,6 +124,8 @@ addEventListener('load', () => {
         else
             document.body.removeAttribute('class');
     }
+    
+    /* processing video */
     
     function processVideo(file) {
         
@@ -151,7 +151,6 @@ addEventListener('load', () => {
         });
         
     }
-    
     function getStreamsData(streams=[]) {
         let ret = {
             video: [],
@@ -176,6 +175,7 @@ addEventListener('load', () => {
         
         return ret;
     }
+    
     function getStreamData(stream={
         avg_frame_rate: '0',
         bit_rate: '0',
@@ -212,7 +212,8 @@ addEventListener('load', () => {
         }
     }
     
-    const video = document.querySelector('#editor video');
+    /* editing page */
+    
     var data = {
         bitrate: 0,
         duration: 0,
@@ -241,215 +242,9 @@ addEventListener('load', () => {
                 input.parentElement.classList.remove('disabled');
         });
         
-        video.setAttribute('src', file.path);
+        videoEditor.src(file.path);
         
     }
-    
-    function calculatePositionBar() {
-        if ((Array.from(document.body.classList).includes('editor') || Array.from(document.body.classList).includes('processing')) && !videoPositionDragging && !trimStartDragging && !trimEndDragging && !volumeDragging) {
-            
-            console.log(trimStartPos, trimEndPos);
-            
-            if (video.currentTime >= trimEndPos && !video.paused)
-                video.pause();
-            
-            if (video.currentTime < trimStartPos)
-                video.currentTime = trimStartPos;
-            else if (video.currentTime > trimEndPos)
-                video.currentTime = trimEndPos;
-            
-            document.getElementById('currentTime').textContent = secondsToTime(Math.floor(video.currentTime));
-            
-            let videoWidth = document.getElementById('videoBar').getBoundingClientRect().width - 2,
-                volumeWidth = document.getElementById('volumeBar').getBoundingClientRect().width;
-            
-            document.querySelector('#videoBar .position').style.left = video.currentTime/video.duration*videoWidth;
-            document.querySelector('#videoBar .trimstart').style.left = trimStartPos/video.duration*videoWidth;
-            document.querySelector('#videoBar .trimend').style.left = trimEndPos/video.duration*videoWidth;
-            document.querySelector('#volumeBar .position').style.left = video.volume*volumeWidth;
-            
-            videoPos = video.currentTime;
-        }
-    }
-    video.addEventListener('error', () => {
-        console.error(video.error);
-        document.body.classList.remove('processing');
-        document.body.classList.add('error');
-    });
-    video.addEventListener('progress', () => {
-        document.getElementById('currentTime').textContent = secondsToTime(Math.floor(video.currentTime));
-        document.getElementById('endTime').textContent = secondsToTime(video.duration);
-        trimEndPos = video.duration;
-        calculatePositionBar();
-        document.body.classList.remove('processing');
-        document.body.classList.add('editor');
-    });
-    video.addEventListener('timeupdate', calculatePositionBar);
-    video.addEventListener('volumechange', calculatePositionBar);
-    video.addEventListener('click', () => {
-        if (video.paused)
-            video.play();
-        else
-            video.pause();
-    });
-    addEventListener('resize', calculatePositionBar);
-    
-    document.querySelector('#videoBar .position').addEventListener('mousedown', () => {
-        videoPositionDragging = true;
-        savedLeftPosition = document.querySelector('#videoBar .position').style.left;
-        video.pause();
-    });
-    document.querySelector('#videoBar .trimstart').addEventListener('mousedown', () => {
-        trimStartDragging = true;
-        savedLeftPosition = document.querySelector('#videoBar .position').style.left;
-        video.pause();
-    });
-    document.querySelector('#videoBar .trimend').addEventListener('mousedown', () => {
-        trimEndDragging = true;
-        savedLeftPosition = document.querySelector('#videoBar .position').style.left;
-        video.pause();
-    });
-    document.querySelector('#volumeBar .position').addEventListener('mousedown', () => {
-        volumeDragging = true;
-    });
-    
-    document.addEventListener('mousemove', e => {
-        let videoBar = document.getElementById('videoBar').getBoundingClientRect(),
-            left = e.clientX - videoBar.left;
-
-        if (left < 0)
-            left = 0;
-        else if (left > videoBar.width-2)
-            left = videoBar.width-2;
-        
-        if (videoPositionDragging) {
-            
-            if (left < document.querySelector('#videoBar .trimstart').getBoundingClientRect().left - videoBar.left)
-                left = document.querySelector('#videoBar .trimstart').getBoundingClientRect().left - videoBar.left;
-            else if (left > document.querySelector('#videoBar .trimend').getBoundingClientRect().left - videoBar.left)
-                left = document.querySelector('#videoBar .trimend').getBoundingClientRect().left - videoBar.left;
-            
-            let percent = left/videoBar.width;
-            
-            document.querySelector('#videoBar .position').style.left = left;
-            
-            video.currentTime = videoPos = percent*video.duration;
-            document.getElementById('currentTime').textContent = secondsToTime(Math.floor(percent*video.duration));
-            
-        } else if (trimStartDragging) {
-            
-            if (left > document.querySelector('#videoBar .trimend').getBoundingClientRect().left - videoBar.left)
-                left = document.querySelector('#videoBar .trimend').getBoundingClientRect().left - videoBar.left;
-            
-            let percent = left/videoBar.width;
-            
-            document.querySelector('#videoBar .trimstart').style.left = left;
-            
-            video.currentTime = trimStartPos = percent*video.duration;
-            document.getElementById('currentTime').textContent = secondsToTime(Math.floor(percent*video.duration));
-            
-            document.getElementById('endTime').textContent = secondsToTime(Math.floor(trimEndPos - trimStartPos));
-            
-            if (trimStartPos >= videoPos)
-                document.querySelector('#videoBar .position').style.left = left;
-            else
-                document.querySelector('#videoBar .position').style.left = savedLeftPosition;
-            
-        } else if (trimEndDragging) {
-            
-            if (left < document.querySelector('#videoBar .trimstart').getBoundingClientRect().left - videoBar.left)
-                left = document.querySelector('#videoBar .trimstart').getBoundingClientRect().left - videoBar.left;
-            
-            let percent = left/videoBar.width;
-            
-            document.querySelector('#videoBar .trimend').style.left = left;
-            
-            video.currentTime = trimEndPos = percent*video.duration;
-            document.getElementById('currentTime').textContent = secondsToTime(Math.floor(percent*video.duration));
-            
-            document.getElementById('endTime').textContent = secondsToTime(Math.floor(trimEndPos - trimStartPos));
-            
-            if (trimEndPos <= videoPos)
-                document.querySelector('#videoBar .position').style.left = left;
-            else
-                document.querySelector('#videoBar .position').style.left = savedLeftPosition;
-            
-        } else if (volumeDragging) {
-            
-            let volumeBar = document.getElementById('volumeBar').getBoundingClientRect();
-            left = e.clientX - volumeBar.left;
-
-            if (left < 0)
-                left = 0;
-            else if (left > volumeBar.width)
-                left = volumeBar.width;
-            
-            let percent = left/volumeBar.width;
-            
-            document.querySelector('#volumeBar .position').style.left = left;
-            
-            video.volume = percent;
-            
-        }
-        
-    });
-    document.addEventListener('mouseup', () => {
-        videoPositionDragging = false;
-        if (trimStartDragging || trimEndDragging) {
-            video.currentTime = videoPos;
-            document.getElementById('currentTime').textContent = secondsToTime(Math.floor(videoPos));
-        }
-        trimStartDragging = false;
-        trimEndDragging = false;
-        volumeDragging = false;
-    });
-    
-    let currentFramePlay = null;
-    
-    const keysHolding = {
-        ArrowLeft: () => {
-            video.pause();
-            video.currentTime = videoPos = Math.max(trimStartPos, video.currentTime - (1/data.streams.primary.video.framerate));
-        },
-        ArrowRight: () => {
-            video.pause();
-            video.currentTime = videoPos = Math.min(trimEndPos, video.currentTime + (1/data.streams.primary.video.framerate));
-        },
-        ArrowUp: () => {
-            video.volume = Math.min(1, video.volume + .05);
-            console.log(video.volume);
-            calculatePositionBar();
-        },
-        ArrowDown: () => {
-            video.volume = Math.max(0, video.volume - .05);
-            console.log(video.volume);
-            calculatePositionBar();
-        },
-        ' ': () => {
-            if (video.paused && videoPos < trimEndPos)
-                video.play();
-            else
-                video.pause();
-        },
-        '[': () => {
-            trimStartPos = video.currentTime;
-            document.getElementById('endTime').textContent = secondsToTime(Math.floor(trimEndPos - trimStartPos));
-            calculatePositionBar();
-        },
-        ']': () => {
-            trimEndPos = video.currentTime;
-            document.getElementById('endTime').textContent = secondsToTime(Math.floor(trimEndPos - trimStartPos));
-            calculatePositionBar();
-        },
-        Enter: finishButton
-    };
-    
-    document.addEventListener('keydown', e => {
-        if (document.body.classList.contains('editor') && e.key in keysHolding) {
-            e.preventDefault();
-            keysHolding[e.key]();
-        }
-    });
     
     document.getElementById('fixmic').addEventListener('change', e => {
         if (e.target.checked) {
@@ -478,7 +273,7 @@ addEventListener('load', () => {
     document.querySelector('#finish .button').addEventListener('click', finishButton);
     
     function finishButton() {
-        video.pause();
+        videoEditor.close();
         
         document.body.classList.remove('editor');
         document.body.classList.add('editsprogress');
@@ -486,14 +281,17 @@ addEventListener('load', () => {
         runffmpeg();
     }
     
+    document.addEventListener('keydown', e => {
+        if (document.body.classList.contains('editor') && e.key === 'Enter')
+            finishButton();
+    });
+    
+    /* loading edits */
+    
     /*
      * play/pause animation - nahh
      * display some data (maybe under advanced?)
      */
-    
-    //debug
-    //xhandleFiles([{path:'/Users/jaketr00/Downloads/Call_of_Duty_Modern_Warfare_2019_2020.07.11_-_16.49.41.04.DVR.mp4_combined_audio_Trim.mp4'}])
-    //document.body.classList.add('editsprogress');
     
     /*
      * https://ffmpeg.org/pipermail/ffmpeg-user/2014-March/020605.html
@@ -554,8 +352,6 @@ addEventListener('load', () => {
         let command = [],
             secondCommand = [];
         
-        //['-i', data.path.dir+'/'+data.path.name+data.path.ext, '-b:v', '5000k', '/Users/jaketr00/Downloads/node compression test.mp4', '-y']
-        
         if (!document.getElementById('fixmic').parentElement.classList.contains('disabled')
             && document.getElementById('fixmic').checked)
             command = ['-filter_complex', '[0:a:1] afftdn=nt=w:om=o:tr= [l] ; [l] agate=threshold=.035 [l] ; [0:a:0] [l] amix=inputs=2 [a]', '-map', '0:v:0', '-map', '[a]'];
@@ -594,10 +390,17 @@ addEventListener('load', () => {
         
         
     }
+    
+    /* error */
+    
+    document.querySelector('#error .small').addEventListener('click', () => {
+        ipcRenderer.send('devtools');
+    });
+    
 
-    ipcRenderer.on('', (event, arg) => {
+    /*ipcRenderer.on('', (event, arg) => {
         
     });
-    ipcRenderer.send('', {});
+    ipcRenderer.send('', {});*/
 
 });
