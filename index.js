@@ -497,7 +497,6 @@ addEventListener('load', () => {
             
             commands[0].command.outputOptions('-map', '0:v:0', '-map', '0:a:0');
             
-            
             //command = ['-map', '0:v:0', '-map', '0:a:0'];
         }
         
@@ -513,8 +512,10 @@ addEventListener('load', () => {
                 
                 commands[1].video = commands[1].audio = true;
                 
-            } else //compress in same file
+            } else { //compress in same file
                 commands[0].command.videoBitrate('5000k');
+                commands[0].video = true;
+            }
             
         } /*else
             command = [...command, '-acodec', 'copy', '-vcodec', 'copy'];*/
