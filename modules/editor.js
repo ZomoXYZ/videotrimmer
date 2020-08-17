@@ -1,6 +1,7 @@
 module.exports = (video, error) => {
     /*
      * video: video html element
+     * error: callback function in case of error
      */
     
     //base definitions
@@ -223,6 +224,7 @@ module.exports = (video, error) => {
             trimEndPos = video.currentTime;
             document.getElementById('endTime').textContent = secondsToTime(Math.floor(trimEndPos - trimStartPos));
             calculatePositionBar();
+            video.pause();
         }
     };
     document.addEventListener('keydown', e => {
@@ -252,6 +254,9 @@ module.exports = (video, error) => {
         close: () => {
             video.pause();
             isOpen = false;
+        },
+        data: () => {
+            return { trimStartPos, trimEndPos, duration: trimEndPos-trimStartPos };
         }
     };
     

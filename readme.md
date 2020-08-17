@@ -12,8 +12,11 @@
 
 **fixes**
 
-- reorganizing `index.js` code
-- commenting `index.js`
+- reorganized `index.js` code
+ - moved the video player functionality into its own file (`modules/editor.js`)
+ - now using [`fluent-ffmpeg` from npm](https://www.npmjs.com/package/fluent-ffmpeg) to create the ffmpeg command
+- commented `index.js`
+- ffmpeg will no longer reencode the audio and video when not needed
 
 ### v0.0.2
 

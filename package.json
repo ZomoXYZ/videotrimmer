@@ -52,6 +52,7 @@
     },
     "dependencies": {
         "ffbinaries": "^1.1.4",
+        "fluent-ffmpeg": "^2.1.2",
         "mime": "^2.4.6"
     }
 }
