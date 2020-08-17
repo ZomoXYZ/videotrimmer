@@ -1,12 +1,15 @@
+//basic variables
 const {ipcRenderer, webFrame} = require('electron'),
       mime = require('mime'),
-      getMimeType = str => mime.getType(str) || '',
+      getMimeType = str => mime.getType(str) || '', //mime.getType() return null if no result, empty string is easier for my usage
       os = require('os'),
       fs = require('fs'),
       path = require('path'),
       shell = require('child_process'),
       
-      secondsToTime = seconds => {
+      ffmpeg = require('fluent-ffmpeg'),
+      
+      secondsToTime = seconds => { //1000 (seconds) -> 16:40 (minutes:seconds)
           seconds = Math.floor(seconds);
           seconds = Math.max(0, seconds);
           var minutes = Math.floor(seconds / 60);
@@ -22,35 +25,61 @@ const {ipcRenderer, webFrame} = require('electron'),
       ffDir = path.join(getAppDataPath(), 'ffmpeg-binaries'),
       ffmpegDir = path.join(ffDir, 'ffmpeg'),
       ffprobeDir = path.join(ffDir, 'ffprobe');
+      
+//easy round functions
+const round = (num, closest=1) => Math.round(num/closest)*closest;
+round.ceil = (num, closest=1) => Math.ceil(num/closest)*closest;
+round.floor = (num, closest=1) => Math.floor(num/closest)*closest;
 
+//number mapping
+// https://gist.github.com/xposedbones/75ebaef3c10060a3ee3b246166caab56
+const mapNumber = (num, in_min, in_max, out_min, out_max) => {
+    return (num - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+};
+
+
+//Location to store ffmpeg binaries
 function getAppDataPath() {
-     switch (process.platform) {
+    switch (process.platform) {
         case 'darwin': {
             return path.join(process.env.HOME, 'Library', 'Application Support', 'Ashley-VideoTrimmer');
         }
-         case 'win32': {
-             return path.join(process.env.APPDATA, 'Ashley-VideoTrimmer');
-         }
-         case 'linux': {
-             return path.join(process.env.HOME, '.Ashley-VideoTrimmer');
-         }
-         default: {
-             console.log('Unsupported platform!');
-             process.exit(1);
-         }
-     }
+        case 'win32': {
+            return path.join(process.env.APPDATA, 'Ashley-VideoTrimmer');
+        }
+        case 'linux': {
+            return path.join(process.env.HOME, '.Ashley-VideoTrimmer');
+        }
+        default: {
+            ipcRenderer.send('exit', 'Unsupported platform');
+        }
+    }
 }
 
+//prevent zooming
 webFrame.setVisualZoomLevelLimits(1, 1);
 
+//in case an error happened in main.js
 if (!fs.existsSync(ffDir))
     ipcRenderer.send('exit', 'OS IS NOT SET UP');
 
 addEventListener('load', () => {
     
-    document.querySelector('#error .small').addEventListener('click', () => {
-        ipcRenderer.send('devtools');
+    //declarations outside of page scope
+    const videoEditor = require('./modules/editor.js')(document.querySelector('#editor video'), () => {
+        blockFile = false;
     });
+    
+    /* general declarations by page
+     * 
+     * upload screen/hover
+     * processing video
+     * editing page
+     * loading edits
+     * error
+     */
+    
+    /* upload screen/hover */
     
     //html's "video/*" sucks so this accepts all actual videos
     var videoExts = [];
@@ -59,19 +88,10 @@ addEventListener('load', () => {
             videoExts.push('.'+ext);
     document.getElementById('fileupload').setAttribute('accept', videoExts.join(','));
     
-    var videoPos = 0,
-        trimStartPos = 0,
-        trimEndPos = 0,
-        videoPositionDragging = false,
-        trimStartDragging = false,
-        trimEndDragging = false,
-        volumeDragging = false,
-        savedLeftPosition = 0;
+    var blockFile = false, //should block file from being dragged over
+        draggedover = false;
     
-    var blockFile = false;
-    
-    let draggedover = false;
-
+    //file drag+drop listeners
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         document.addEventListener(eventName, e => {e.preventDefault();e.stopPropagation();}, false); //prevent defualt
     });
@@ -103,22 +123,16 @@ addEventListener('load', () => {
             handleFiles(this.files);
     }, false);
 
+    //handle file input
     function handleFiles(files) {
         document.body.setAttribute('class', 'processing');
         
-        videoPos = 0;
-        trimStartPos = 0;
-        trimEndPos = 0;
-        videoPositionDragging = false;
-        trimStartDragging = false;
-        trimEndDragging = false;
-        volumeDragging = false;
-        savedLeftPosition = 0;
+        videoEditor.open(document.querySelector('#editor video'));
         
         document.querySelector('#progress .progressbar').classList.remove('finished');
 
         console.log(files);
-        //files[i].path
+        
         files = Array.from(files).filter(f => getMimeType(f.path).split('/')[0] === 'video');
         
         if (files.length)
@@ -127,6 +141,9 @@ addEventListener('load', () => {
             document.body.removeAttribute('class');
     }
     
+    /* processing video */
+    
+    //ffprobe file and process the data
     function processVideo(file) {
         
         //ffprobe time
@@ -152,6 +169,7 @@ addEventListener('load', () => {
         
     }
     
+    //function to create an object of each stream's data
     function getStreamsData(streams=[]) {
         let ret = {
             video: [],
@@ -176,6 +194,8 @@ addEventListener('load', () => {
         
         return ret;
     }
+    
+    //function to create an objecy of video data
     function getStreamData(stream={
         avg_frame_rate: '0',
         bit_rate: '0',
@@ -212,7 +232,9 @@ addEventListener('load', () => {
         }
     }
     
-    const video = document.querySelector('#editor video');
+    /* editing page */
+    
+    //null data so functions will not error before the data is filled out
     var data = {
         bitrate: 0,
         duration: 0,
@@ -221,11 +243,13 @@ addEventListener('load', () => {
         streams: getStreamsData(),
         path: ''
     };
+    
+    //take data and display the editor
     function displayEditor(file, rawdata) {
         
         data = {
-            bitrate: rawdata.format.bit_rate,
-            duration: rawdata.format.duration,
+            bitrate: parseInt(rawdata.format.bit_rate),
+            duration: parseFloat(rawdata.format.duration),
             format: rawdata.format.format_long_name,
             filename: rawdata.format.filename,
             streams: getStreamsData(rawdata.streams),
@@ -241,216 +265,11 @@ addEventListener('load', () => {
                 input.parentElement.classList.remove('disabled');
         });
         
-        video.setAttribute('src', file.path);
+        videoEditor.src(file.path);
         
     }
     
-    function calculatePositionBar() {
-        if ((Array.from(document.body.classList).includes('editor') || Array.from(document.body.classList).includes('processing')) && !videoPositionDragging && !trimStartDragging && !trimEndDragging && !volumeDragging) {
-            
-            console.log(trimStartPos, trimEndPos);
-            
-            if (video.currentTime >= trimEndPos && !video.paused)
-                video.pause();
-            
-            if (video.currentTime < trimStartPos)
-                video.currentTime = trimStartPos;
-            else if (video.currentTime > trimEndPos)
-                video.currentTime = trimEndPos;
-            
-            document.getElementById('currentTime').textContent = secondsToTime(Math.floor(video.currentTime));
-            
-            let videoWidth = document.getElementById('videoBar').getBoundingClientRect().width - 2,
-                volumeWidth = document.getElementById('volumeBar').getBoundingClientRect().width;
-            
-            document.querySelector('#videoBar .position').style.left = video.currentTime/video.duration*videoWidth;
-            document.querySelector('#videoBar .trimstart').style.left = trimStartPos/video.duration*videoWidth;
-            document.querySelector('#videoBar .trimend').style.left = trimEndPos/video.duration*videoWidth;
-            document.querySelector('#volumeBar .position').style.left = video.volume*volumeWidth;
-            
-            videoPos = video.currentTime;
-        }
-    }
-    video.addEventListener('error', () => {
-        console.error(video.error);
-        document.body.classList.remove('processing');
-        document.body.classList.add('error');
-    });
-    video.addEventListener('progress', () => {
-        document.getElementById('currentTime').textContent = secondsToTime(Math.floor(video.currentTime));
-        document.getElementById('endTime').textContent = secondsToTime(video.duration);
-        trimEndPos = video.duration;
-        calculatePositionBar();
-        document.body.classList.remove('processing');
-        document.body.classList.add('editor');
-    });
-    video.addEventListener('timeupdate', calculatePositionBar);
-    video.addEventListener('volumechange', calculatePositionBar);
-    video.addEventListener('click', () => {
-        if (video.paused)
-            video.play();
-        else
-            video.pause();
-    });
-    addEventListener('resize', calculatePositionBar);
-    
-    document.querySelector('#videoBar .position').addEventListener('mousedown', () => {
-        videoPositionDragging = true;
-        savedLeftPosition = document.querySelector('#videoBar .position').style.left;
-        video.pause();
-    });
-    document.querySelector('#videoBar .trimstart').addEventListener('mousedown', () => {
-        trimStartDragging = true;
-        savedLeftPosition = document.querySelector('#videoBar .position').style.left;
-        video.pause();
-    });
-    document.querySelector('#videoBar .trimend').addEventListener('mousedown', () => {
-        trimEndDragging = true;
-        savedLeftPosition = document.querySelector('#videoBar .position').style.left;
-        video.pause();
-    });
-    document.querySelector('#volumeBar .position').addEventListener('mousedown', () => {
-        volumeDragging = true;
-    });
-    
-    document.addEventListener('mousemove', e => {
-        let videoBar = document.getElementById('videoBar').getBoundingClientRect(),
-            left = e.clientX - videoBar.left;
-
-        if (left < 0)
-            left = 0;
-        else if (left > videoBar.width-2)
-            left = videoBar.width-2;
-        
-        if (videoPositionDragging) {
-            
-            if (left < document.querySelector('#videoBar .trimstart').getBoundingClientRect().left - videoBar.left)
-                left = document.querySelector('#videoBar .trimstart').getBoundingClientRect().left - videoBar.left;
-            else if (left > document.querySelector('#videoBar .trimend').getBoundingClientRect().left - videoBar.left)
-                left = document.querySelector('#videoBar .trimend').getBoundingClientRect().left - videoBar.left;
-            
-            let percent = left/videoBar.width;
-            
-            document.querySelector('#videoBar .position').style.left = left;
-            
-            video.currentTime = videoPos = percent*video.duration;
-            document.getElementById('currentTime').textContent = secondsToTime(Math.floor(percent*video.duration));
-            
-        } else if (trimStartDragging) {
-            
-            if (left > document.querySelector('#videoBar .trimend').getBoundingClientRect().left - videoBar.left)
-                left = document.querySelector('#videoBar .trimend').getBoundingClientRect().left - videoBar.left;
-            
-            let percent = left/videoBar.width;
-            
-            document.querySelector('#videoBar .trimstart').style.left = left;
-            
-            video.currentTime = trimStartPos = percent*video.duration;
-            document.getElementById('currentTime').textContent = secondsToTime(Math.floor(percent*video.duration));
-            
-            document.getElementById('endTime').textContent = secondsToTime(Math.floor(trimEndPos - trimStartPos));
-            
-            if (trimStartPos >= videoPos)
-                document.querySelector('#videoBar .position').style.left = left;
-            else
-                document.querySelector('#videoBar .position').style.left = savedLeftPosition;
-            
-        } else if (trimEndDragging) {
-            
-            if (left < document.querySelector('#videoBar .trimstart').getBoundingClientRect().left - videoBar.left)
-                left = document.querySelector('#videoBar .trimstart').getBoundingClientRect().left - videoBar.left;
-            
-            let percent = left/videoBar.width;
-            
-            document.querySelector('#videoBar .trimend').style.left = left;
-            
-            video.currentTime = trimEndPos = percent*video.duration;
-            document.getElementById('currentTime').textContent = secondsToTime(Math.floor(percent*video.duration));
-            
-            document.getElementById('endTime').textContent = secondsToTime(Math.floor(trimEndPos - trimStartPos));
-            
-            if (trimEndPos <= videoPos)
-                document.querySelector('#videoBar .position').style.left = left;
-            else
-                document.querySelector('#videoBar .position').style.left = savedLeftPosition;
-            
-        } else if (volumeDragging) {
-            
-            let volumeBar = document.getElementById('volumeBar').getBoundingClientRect();
-            left = e.clientX - volumeBar.left;
-
-            if (left < 0)
-                left = 0;
-            else if (left > volumeBar.width)
-                left = volumeBar.width;
-            
-            let percent = left/volumeBar.width;
-            
-            document.querySelector('#volumeBar .position').style.left = left;
-            
-            video.volume = percent;
-            
-        }
-        
-    });
-    document.addEventListener('mouseup', () => {
-        videoPositionDragging = false;
-        if (trimStartDragging || trimEndDragging) {
-            video.currentTime = videoPos;
-            document.getElementById('currentTime').textContent = secondsToTime(Math.floor(videoPos));
-        }
-        trimStartDragging = false;
-        trimEndDragging = false;
-        volumeDragging = false;
-    });
-    
-    let currentFramePlay = null;
-    
-    const keysHolding = {
-        ArrowLeft: () => {
-            video.pause();
-            video.currentTime = videoPos = Math.max(trimStartPos, video.currentTime - (1/data.streams.primary.video.framerate));
-        },
-        ArrowRight: () => {
-            video.pause();
-            video.currentTime = videoPos = Math.min(trimEndPos, video.currentTime + (1/data.streams.primary.video.framerate));
-        },
-        ArrowUp: () => {
-            video.volume = Math.min(1, video.volume + .05);
-            console.log(video.volume);
-            calculatePositionBar();
-        },
-        ArrowDown: () => {
-            video.volume = Math.max(0, video.volume - .05);
-            console.log(video.volume);
-            calculatePositionBar();
-        },
-        ' ': () => {
-            if (video.paused && videoPos < trimEndPos)
-                video.play();
-            else
-                video.pause();
-        },
-        '[': () => {
-            trimStartPos = video.currentTime;
-            document.getElementById('endTime').textContent = secondsToTime(Math.floor(trimEndPos - trimStartPos));
-            calculatePositionBar();
-        },
-        ']': () => {
-            trimEndPos = video.currentTime;
-            document.getElementById('endTime').textContent = secondsToTime(Math.floor(trimEndPos - trimStartPos));
-            calculatePositionBar();
-        },
-        Enter: finishButton
-    };
-    
-    document.addEventListener('keydown', e => {
-        if (document.body.classList.contains('editor') && e.key in keysHolding) {
-            e.preventDefault();
-            keysHolding[e.key]();
-        }
-    });
-    
+    //checkbox exclusivity listeners
     document.getElementById('fixmic').addEventListener('change', e => {
         if (e.target.checked) {
             document.getElementById('onlygame').checked = false;
@@ -475,129 +294,209 @@ addEventListener('load', () => {
     document.getElementById('compresssecondfile').addEventListener('change', e => {
     });
     
+    //finish button
     document.querySelector('#finish .button').addEventListener('click', finishButton);
-    
     function finishButton() {
-        video.pause();
+        videoEditor.close();
         
         document.body.classList.remove('editor');
         document.body.classList.add('editsprogress');
         
         runffmpeg();
     }
+    //Enter for finish button
+    document.addEventListener('keydown', e => {
+        if (document.body.classList.contains('editor') && e.key === 'Enter')
+            finishButton();
+    });
     
-    /*
-     * play/pause animation - nahh
-     * display some data (maybe under advanced?)
-     */
-    
-    //debug
-    //xhandleFiles([{path:'/Users/jaketr00/Downloads/Call_of_Duty_Modern_Warfare_2019_2020.07.11_-_16.49.41.04.DVR.mp4_combined_audio_Trim.mp4'}])
-    //document.body.classList.add('editsprogress');
+    /* loading edits */
     
     /*
      * https://ffmpeg.org/pipermail/ffmpeg-user/2014-March/020605.html
      * ffmpeg outputs data to stderr
      */
     
-    function runffmpegCommand(command, percentFrom, percentTo) {
+    //recursive function to run commands
+    function runffmpegCommand(commands, iteration=0, promiseComplete, promiseError) {
         
-        return new Promise((complete, error) => {
+        let run = (complete, error) => {
         
-            let ffmpegShell = shell.spawn(ffmpegDir, command);
-
-            let preOutput = document.querySelector('#consoleoutput pre'),
-                frameCount = Math.floor((trimEndPos-trimStartPos)/(1/data.streams.primary.video.framerate));
-            
-            ffmpegShell.stderr.on('data', stdout => {
-                let toScroll = Math.abs(document.querySelector('#consoleoutput pre').scrollTop - (document.querySelector('#consoleoutput pre').scrollHeight - document.querySelector('#consoleoutput pre').getBoundingClientRect().height)) < 25;
-
-                console.info(stdout.toString());
-                preOutput.textContent+= '\n'+stdout;
-
-                if (toScroll)
-                    preOutput.scrollTop = preOutput.scrollHeight;
-
-                if (stdout.toString().match(/frame= *(\d+) fps/g)) {
-                    let currentFrame = parseInt(stdout.toString().match(/frame= *(\d+) fps/)[1]),
-                        percent = currentFrame/frameCount;
-                    
-                    percent = Math.max(0, Math.min(100, percent));
-                    percent = percent*(percentTo-percentFrom)+percentFrom;
-
-                    document.querySelector('#progress .progressbar .progressinner').style.width = percent+'%';
-                }
-
-            });
-
-            ffmpegShell.on('close', code => {
-                console.log(`child process exited with code ${code}`);
+            //create the command
+            commands[iteration].finish().then(command => {
                 
-                complete();
-            });
+                //run the command
+                let ffmpegShell = shell.spawn(ffmpegDir, command);
+                console.log(command);
+
+                //basic data stored that shouldn't be recalculated everytime ffmpeg outputs data
+                let preOutput = document.querySelector('#consoleoutput pre'),
+                    frameCount = Math.floor(videoEditor.data().duration/(1/data.streams.primary.video.framerate));
+
+                //on ffmpeg data output
+                ffmpegShell.stderr.on('data', stdout => {
+                    
+                    //if it's already scrolled to the bottom then keep it scrolled to the bottom
+                    let toScroll = Math.abs(document.querySelector('#consoleoutput pre').scrollTop - (document.querySelector('#consoleoutput pre').scrollHeight - document.querySelector('#consoleoutput pre').getBoundingClientRect().height)) < 25;
+
+                    //output data so user can read it
+                    console.info(stdout.toString());
+                    preOutput.textContent+= '\n'+stdout;
+
+                    if (toScroll)
+                        preOutput.scrollTop = preOutput.scrollHeight;
+
+                    //calculate percent and display percent in progress bar
+                    if (stdout.toString().match(/frame= *(\d+) fps/g)) {
+                        let currentFrame = parseInt(stdout.toString().match(/frame= *(\d+) fps/)[1]),
+                            percent = Math.max(0, Math.min(100, currentFrame/frameCount));
+
+                        percent = mapNumber(percent, 0, 1, 100/commands.length*iteration, 100/commands.length*(iteration+1));
+
+                        document.querySelector('#progress .progressbar .progressinner').style.width = round(percent, .01)+'%';
+                    }
+
+                });
+
+                //on ffmpeg done
+                ffmpegShell.on('close', code => {
+                    console.log(`child process exited with code ${code}`);
+
+                    //recurse if there's another command, otherwise return
+                    if (commands.length-1 > iteration)
+                        runffmpegCommand(commands, iteration+1, complete, error);
+                    else
+                        complete();
+                });
+                
+            }).catch(error);
             
-        });
+        };
         
+        //if iteration > 0 then this function is already in a promise and shouldn't create a second
+        if (iteration > 0)
+            run(promiseComplete, promiseError);
+        else
+            return new Promise((complete, error) => run(complete, error));
     }
     
     function runffmpeg() {
-        //data
-        //input: data.path.dir+'/'+data.path.name+data.path.ext
-        //output: data.path.dir+'/'+data.path.name+'_edited'+data.path.ext
-        //output compress as second file: data.path.dir+data.path.name+'_edited_compressed'+data.path.ext
-        
         
         blockFile = true;
         
-        //this entire thing needs to be made better
+        //array of commands
+        let commands = [],
+            commandTemplate = (input, output) => {
+                
+                //basic info
+                let ret = {
+                    input,
+                    output,
+                    audio: false,
+                    video: false,
+                    command: ffmpeg(input.name+input.ext).output(output.name+output.ext)
+                };
+                
+                //use acodec/vcodec copy if needed and prepare the command
+                ret.finish = () => {
+                    return new Promise((complete, fail) => {
+                        
+                        if (!ret.audio)
+                            ret.command.audioCodec('copy');
+                        if (!ret.video)
+                            ret.command.videoCodec('copy');
+                        ret.command._prepare(function(err, args) {
+                            if (err)
+                                fail(err);
+                            else
+                                complete(args);
+                        });
+                        
+                    });
+                };
+                
+                return ret;
+            };
         
-        let command = [],
-            secondCommand = [];
+        //set up main command
+        commands[0] = commandTemplate({
+            name: data.path.dir+'/'+data.path.name,
+            ext: data.path.ext
+        }, {
+            name: data.path.dir+'/'+data.path.name+'_edited',
+            ext: data.path.ext
+        });
         
-        //['-i', data.path.dir+'/'+data.path.name+data.path.ext, '-b:v', '5000k', '/Users/jaketr00/Downloads/node compression test.mp4', '-y']
         
         if (!document.getElementById('fixmic').parentElement.classList.contains('disabled')
-            && document.getElementById('fixmic').checked)
-            command = ['-filter_complex', '[0:a:1] afftdn=nt=w:om=o:tr= [l] ; [l] agate=threshold=.035 [l] ; [0:a:0] [l] amix=inputs=2 [a]', '-map', '0:v:0', '-map', '[a]'];
-        else if (!document.getElementById('onlygame').parentElement.classList.contains('disabled')
-            && document.getElementById('onlygame').checked)
-            command = ['-map', '0:v:0', '-map', '0:a:0'];
+            && document.getElementById('fixmic').checked) { //noise reduction on mic and combine channels
+            
+            commands[0].command.complexFilter([
+                {
+                    filter: 'afftdn', options: {nt:'w',om:'o',tr:''},
+                    inputs: '[0:a:1]', outputs: 'a'
+                },
+                {
+                    filter: 'agate', options: {threshold:'.035'},
+                    inputs: 'a', outputs: 'a'
+                },
+                {
+                    filter: 'amix', options: {inputs:'2'},
+                    inputs: ['[0:a:0]', 'a'], outputs: 'a'
+                }
+            ]).outputOptions('-map', '0:v:0', '-map', '[a]');
+            commands[0].audio = true;
+            
+        } else if (!document.getElementById('onlygame').parentElement.classList.contains('disabled')
+            && document.getElementById('onlygame').checked) //only use game audio
+            
+            commands[0].command.outputOptions('-map', '0:v:0', '-map', '0:a:0');
+        
         
         if (document.getElementById('tocompress').checked) {
             
-            if (document.getElementById('compresssecondfile').checked) {
-                secondCommand = ['-b:v', '5000k'];
-            } else
-                command = [...command, '-b:v', '5000k'];
-            
-        } /*else
-            command = [...command, '-acodec', 'copy', '-vcodec', 'copy'];*/
-        
-        command = ['-ss', trimStartPos, '-to', trimEndPos, ...command];
-        
-        runffmpegCommand(['-i', data.path.dir+'/'+data.path.name+data.path.ext, ...command, data.path.dir+'/'+data.path.name+'_edited'+data.path.ext, '-y'], 0, secondCommand.length ? 50 : 100).then(() => {
-        
-            if (secondCommand.length) {
+            if (document.getElementById('compresssecondfile').checked) { //compress in second file
                 
-                runffmpegCommand(['-i', data.path.dir+'/'+data.path.name+'_edited'+data.path.ext, ...secondCommand, data.path.dir+'/'+data.path.name+'_edited_compress'+data.path.ext, '-y'], 50, 100).then(() => {
-                    document.querySelector('#progress .progressbar .progressinner').style.width = null;
-                    document.querySelector('#progress .progressbar').classList.add('finished');
-                    blockFile = false;
+                commands[1] = commandTemplate(commands[0].output, {
+                    name: commands[0].output.name+'_compressed',
+                    ext: commands[0].output.ext
                 });
+                commands[1].command.videoBitrate('5000k');
                 
-            } else {
-                document.querySelector('#progress .progressbar .progressinner').style.width = null;
-                document.querySelector('#progress .progressbar').classList.add('finished');
-                blockFile = false;
+                commands[1].video = commands[1].audio = true;
+                
+            } else { //compress in same file
+                commands[0].command.videoBitrate('5000k');
+                commands[0].video = true;
             }
+            
+        }
+        
+        //set start/end positions
+        if (round.floor(videoEditor.data().trimStartPos, .01) !== 0)
+            commands[0].command.seekInput(videoEditor.data().trimStartPos);
+        if (round.ceil(videoEditor.data().trimEndPos, .01) !== data.duration)
+            commands[0].command.inputOptions('-to '+videoEditor.data().trimEndPos);
+        
+        //run the commands
+        runffmpegCommand(commands).then(() => {
+            document.querySelector('#progress .progressbar .progressinner').style.width = null;
+            document.querySelector('#progress .progressbar').classList.add('finished');
+            blockFile = false;
+        }).catch(err => {
+            console.error(`error: ${err}`);
+            document.body.classList.remove('editsprogress');
+            document.body.classList.add('error');
         });
         
         
     }
-
-    ipcRenderer.on('', (event, arg) => {
-        
+    
+    /* error */
+    
+    //open dev tools button
+    document.querySelector('#error .small').addEventListener('click', () => {
+        ipcRenderer.send('devtools');
     });
-    ipcRenderer.send('', {});
 
 });

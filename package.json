@@ -1,6 +1,6 @@
 {
     "name": "videotrimmer",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "license": "MIT",
     "description": "easy video trimmer",
     "author": {
@@ -52,6 +52,7 @@
     },
     "dependencies": {
         "ffbinaries": "^1.1.4",
+        "fluent-ffmpeg": "^2.1.2",
         "mime": "^2.4.6"
     }
 }
