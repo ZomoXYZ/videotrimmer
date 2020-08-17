@@ -8,7 +8,7 @@
 
 ## changelog
 
-### v0.0.3 (in progress)
+### v0.0.3
 
 **fixes**
 
