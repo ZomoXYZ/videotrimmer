@@ -8,6 +8,12 @@
 
 ## changelog
 
+### v0.0.4
+
+**additions**
+
+- added a cancel/finish button to final page
+
 ### v0.0.3
 
 **fixes**
