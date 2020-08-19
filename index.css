@@ -454,7 +454,7 @@ body > div {
 
 #editsprogress #progress {
   width: 100%;
-  height: 33%;
+  height: 20%;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -481,17 +481,32 @@ body > div {
   width: 0%;
   transition: width 250ms ease-in-out, height 250ms ease-out;
 }
-#editsprogress #progress .progressbar.finished {
+#editsprogress #return {
+  height: 15%;
+}
+#editsprogress #return #returncancel {
+  display: inline-block;
+}
+#editsprogress #return #returndone {
+  display: none;
+}
+#editsprogress.finished #progress .progressbar {
   width: 60px;
   height: 60px;
 }
-#editsprogress #progress .progressbar.finished .progressinner {
+#editsprogress.finished #progress .progressbar .progressinner {
   width: 100%;
   height: 50px;
 }
+#editsprogress.finished #return #returncancel {
+  display: none;
+}
+#editsprogress.finished #return #returndone {
+  display: inline-block;
+}
 #editsprogress #consoleoutput {
   width: 100%;
-  height: 67%;
+  height: 65%;
   padding: 15px;
 }
 #editsprogress #consoleoutput pre {

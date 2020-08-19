@@ -357,11 +357,20 @@ addEventListener('load', () => {
                     }
 
                 });
+                
+                //cancel button
+                let cancelButton = () => {
+                    ffmpegShell.kill('SIGINT')
+                };
+                document.getElementById('returncancel').addEventListener('click', cancelButton);
 
                 //on ffmpeg done
                 ffmpegShell.on('close', code => {
                     console.log(`child process exited with code ${code}`);
-
+                    
+                    //disable cancel button
+                    document.getElementById('returncancel').removeEventListener('click', cancelButton);
+                    
                     //recurse if there's another command, otherwise return
                     if (commands.length-1 > iteration)
                         runffmpegCommand(commands, iteration+1, complete, error);
@@ -481,7 +490,7 @@ addEventListener('load', () => {
         //run the commands
         runffmpegCommand(commands).then(() => {
             document.querySelector('#progress .progressbar .progressinner').style.width = null;
-            document.querySelector('#progress .progressbar').classList.add('finished');
+            document.getElementById('editsprogress').classList.add('finished');
             blockFile = false;
         }).catch(err => {
             console.error(`error: ${err}`);
@@ -491,6 +500,11 @@ addEventListener('load', () => {
         
         
     }
+    
+    //done button
+    document.getElementById('returndone').addEventListener('click', () => {
+        document.body.classList.remove('editsprogress');
+    });
     
     /* error */
     
