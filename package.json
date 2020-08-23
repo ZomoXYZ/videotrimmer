@@ -14,7 +14,8 @@
             "index.css",
             "index.js",
             "main.js",
-            "resources/Open_Sans/*"
+            "resources/Open_Sans/*",
+            "modules/*"
         ],
         "dmg": {
             "contents": [
