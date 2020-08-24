@@ -25,7 +25,10 @@ const {ipcRenderer, webFrame} = require('electron'),
       ffDir = path.join(getAppDataPath(), 'ffmpeg-binaries'),
       ffmpegDir = path.join(ffDir, 'ffmpeg'),
       ffprobeDir = path.join(ffDir, 'ffprobe');
-      
+
+//aaaaaah
+ffmpeg.setFfmpegPath(ffmpegDir);
+
 //easy round functions
 const round = (num, closest=1) => Math.round(num/closest)*closest;
 round.ceil = (num, closest=1) => Math.ceil(num/closest)*closest;
