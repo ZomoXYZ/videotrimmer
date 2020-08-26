@@ -12,6 +12,8 @@
 
 **additions**
 
+- version number is now displayed on primary screen
+- editor screen will scale down if it isn't all visible
 - added a cancel/finish button to final page
 
 ### v0.0.3

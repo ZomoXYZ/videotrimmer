@@ -7,6 +7,8 @@ const {ipcRenderer, webFrame} = require('electron'),
       path = require('path'),
       shell = require('child_process'),
       
+      Version = require('./package.json').version,
+      
       ffmpeg = require('fluent-ffmpeg'),
       
       secondsToTime = seconds => { //1000 (seconds) -> 16:40 (minutes:seconds)
@@ -84,6 +86,31 @@ addEventListener('load', () => {
     
     /* upload screen/hover */
     
+    //display version number
+    document.getElementById('version').textContent = Version;
+    
+    //check for update
+    require('https').get('https://raw.githubusercontent.com/ZomoXYZ/videotrimmer/master/package.json', res => {
+        res.on('data', data => {
+            try {
+                data = JSON.parse(data);
+                
+                let currentVersion = Version.split('.'),
+                    newVersion = data.version.split('.');
+                
+                for (let i = 0; i < 3; i++) {
+                    let cv = parseInt(currentVersion[i]),
+                        nv = parseInt(newVersion[i]);
+                    if (nv > cv) {
+                        document.getElementById('version').classList.add('update');
+                        break;
+                    }
+                }
+                
+            } catch(e) {}
+        });
+    });
+    
     //html's "video/*" sucks so this accepts all actual videos
     var videoExts = [];
     for (let ext in mime._types)
@@ -131,6 +158,7 @@ addEventListener('load', () => {
         document.body.setAttribute('class', 'processing');
         
         videoEditor.open(document.querySelector('#editor video'));
+        videoEditor.onload(editorScaleDo);
         
         document.querySelector('#progress .progressbar').classList.remove('finished');
 
@@ -157,7 +185,7 @@ addEventListener('load', () => {
         });
 
         probe.stderr.on('data', stderr => {
-            console.error(`stderr: ${stderr}`);
+            console.error('stderr', stderr);
             document.body.classList.remove('processing');
             document.body.classList.add('error');
         });
@@ -312,6 +340,21 @@ addEventListener('load', () => {
         if (document.body.classList.contains('editor') && e.key === 'Enter')
             finishButton();
     });
+    
+    //scale for editor page to ensure entire page stays visible
+    let editorScale = 1;
+    const editorScaleDo = () => {
+        
+        let height = parseFloat(getComputedStyle(document.getElementById('editorInner')).height)
+                     + parseFloat(getComputedStyle(document.getElementById('editor')).padding)*2;
+        
+        if (innerHeight < height) {
+            editorScale = innerHeight/height;
+            document.getElementById('editor').style.transform = `scale(${editorScale}, ${editorScale})`;
+        } else 
+            document.getElementById('editor').style.transform = `scale(1, 1)`;
+    };
+    addEventListener('resize', editorScaleDo);
     
     /* loading edits */
     
@@ -496,7 +539,7 @@ addEventListener('load', () => {
             document.getElementById('editsprogress').classList.add('finished');
             blockFile = false;
         }).catch(err => {
-            console.error(`error: ${err}`);
+            console.error('error', err);
             document.body.classList.remove('editsprogress');
             document.body.classList.add('error');
         });
