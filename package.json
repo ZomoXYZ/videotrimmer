@@ -12,6 +12,7 @@
         "files": [
             "index.html",
             "index.css",
+            "index.css.map",
             "index.js",
             "main.js",
             "resources/Open_Sans/*",
