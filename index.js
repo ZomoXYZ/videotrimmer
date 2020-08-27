@@ -7,7 +7,7 @@ const {ipcRenderer, webFrame} = require('electron'),
       path = require('path'),
       shell = require('child_process'),
       
-      Version = require('./package.json').version,
+      Version = require('./package.json').version,//
       
       ffmpeg = require('fluent-ffmpeg'),
       
