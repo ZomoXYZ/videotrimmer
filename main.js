@@ -38,58 +38,52 @@ if (!fs.existsSync(getAppDataPath()))
     fs.mkdirSync(getAppDataPath());
 
 //https://electron.atom.io/docs/tutorial/quick-start/
+function downloadFfmpeg() {
+    
+    if (!fs.existsSync(path.join(getAppDataPath(), 'ffmpeg-binaries', 'ffmpeg')) || !fs.existsSync(path.join(getAppDataPath(), 'ffmpeg-binaries', 'ffprobe')))
+        require('ffbinaries').downloadBinaries({
+            destination: path.join(getAppDataPath(), 'ffmpeg-binaries'),
+            components: ['ffmpeg', 'ffprobe']
+        }, createWindow);
+    else
+        createWindow();
+    
+}
 function createWindow() {
-        
-    require('ffbinaries').downloadBinaries({
-        destination: path.join(getAppDataPath(), 'ffmpeg-binaries'),
-        components: ['ffmpeg', 'ffprobe']
-    }, () => {
-        
-        mainWindow = new BrowserWindow({
-            width: 530, height: 560,
-            minWidth: 200, minHeight: 200,
-            autoHideMenuBar: true,
-            backgroundColor: '#434442',
-            darkTheme: true,
-            titleBarStyle: 'default',
-            webPreferences: {
-                nodeIntegration: true,
-                worldSafeExecuteJavaScript: true
-            }
-        });
-
-        mainWindow.loadURL(url.format({
-            pathname: path.join(__dirname, 'index.html'),
-            protocol: 'file:',
-            slashes: true
-        }));
-
-        //mainWindow.webContents.openDevTools();
-
-        mainWindow.on('closed', function () {
-            mainWindow = null;
-        });
-
+    
+    mainWindow = new BrowserWindow({
+        width: 530, height: 560,
+        minWidth: 200, minHeight: 200,
+        autoHideMenuBar: true,
+        backgroundColor: '#434442',
+        darkTheme: true,
+        titleBarStyle: 'default',
+        webPreferences: {
+            nodeIntegration: true,
+            worldSafeExecuteJavaScript: true
+        }
     });
+
+    mainWindow.loadURL(url.format({
+        pathname: path.join(__dirname, 'index.html'),
+        protocol: 'file:',
+        slashes: true
+    }));
+
+    //mainWindow.webContents.openDevTools();
+
+    mainWindow.on('closed', function () {
+        mainWindow = null;
+    });
+    
 }
 
+//on ready
 if (app.isReady())
-    createWindow();
-app.on('ready', createWindow);
+    downloadFfmpeg();
+app.on('ready', downloadFfmpeg);
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function () {
-    // On OS X it is common for applications and their menu bar
-    // to stay active until the user quits explicitly with Cmd + Q
-    
-    //no reason to leave it open for mac either though
-    //if (process.platform !== 'darwin')
-        app.quit();
-});
-
-app.on('activate', function () {
-    // On OS X it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (mainWindow === null)
-        createWindow();
+    app.quit();
 });

@@ -1,4 +1,4 @@
-module.exports = (video, error) => {
+module.exports = (video, onload, error) => {
     /*
      * video: video html element
      * error: callback function in case of error
@@ -32,8 +32,8 @@ module.exports = (video, error) => {
             
             document.getElementById('currentTime').textContent = secondsToTime(Math.floor(video.currentTime));
             
-            let videoWidth = document.getElementById('videoBar').getBoundingClientRect().width - 2,
-                volumeWidth = document.getElementById('volumeBar').getBoundingClientRect().width;
+            let videoWidth = parseFloat(getComputedStyle(document.getElementById('videoBar')).width) - 2,
+                volumeWidth = parseFloat(getComputedStyle(document.getElementById('volumeBar')).width);
             
             document.querySelector('#videoBar .position').style.left = video.currentTime/video.duration*videoWidth;
             document.querySelector('#videoBar .trimstart').style.left = trimStartPos/video.duration*videoWidth;
@@ -60,6 +60,7 @@ module.exports = (video, error) => {
         calculatePositionBar();
         document.body.classList.remove('processing');
         document.body.classList.add('editor');
+        onload();
     });
     
     //general video listeners
@@ -102,8 +103,8 @@ module.exports = (video, error) => {
 
         if (left < 0)
             left = 0;
-        else if (left > videoBar.width-2)
-            left = videoBar.width-2;
+        else if (left > videoBar.width)
+            left = videoBar.width;
         
         if (videoPositionDragging) {
             
@@ -112,9 +113,10 @@ module.exports = (video, error) => {
             else if (left > document.querySelector('#videoBar .trimend').getBoundingClientRect().left - videoBar.left)
                 left = document.querySelector('#videoBar .trimend').getBoundingClientRect().left - videoBar.left;
             
-            let percent = left/videoBar.width;
+            let percent = left/videoBar.width,
+                leftVisible = percent*parseFloat(getComputedStyle(document.getElementById('videoBar')).width);
             
-            document.querySelector('#videoBar .position').style.left = left;
+            document.querySelector('#videoBar .position').style.left = leftVisible;
             
             video.currentTime = videoPos = percent*video.duration;
             document.getElementById('currentTime').textContent = secondsToTime(Math.floor(percent*video.duration));
@@ -124,9 +126,10 @@ module.exports = (video, error) => {
             if (left > document.querySelector('#videoBar .trimend').getBoundingClientRect().left - videoBar.left)
                 left = document.querySelector('#videoBar .trimend').getBoundingClientRect().left - videoBar.left;
             
-            let percent = left/videoBar.width;
+            let percent = left/videoBar.width,
+                leftVisible = percent*parseFloat(getComputedStyle(document.getElementById('videoBar')).width);
             
-            document.querySelector('#videoBar .trimstart').style.left = left;
+            document.querySelector('#videoBar .trimstart').style.left = leftVisible;
             
             video.currentTime = trimStartPos = percent*video.duration;
             document.getElementById('currentTime').textContent = secondsToTime(Math.floor(percent*video.duration));
@@ -134,7 +137,7 @@ module.exports = (video, error) => {
             document.getElementById('endTime').textContent = secondsToTime(Math.floor(trimEndPos - trimStartPos));
             
             if (trimStartPos >= videoPos)
-                document.querySelector('#videoBar .position').style.left = left;
+                document.querySelector('#videoBar .position').style.left = leftVisible;
             else
                 document.querySelector('#videoBar .position').style.left = savedLeftPosition;
             
@@ -143,9 +146,10 @@ module.exports = (video, error) => {
             if (left < document.querySelector('#videoBar .trimstart').getBoundingClientRect().left - videoBar.left)
                 left = document.querySelector('#videoBar .trimstart').getBoundingClientRect().left - videoBar.left;
             
-            let percent = left/videoBar.width;
+            let percent = left/videoBar.width,
+                leftVisible = percent*parseFloat(getComputedStyle(document.getElementById('videoBar')).width);
             
-            document.querySelector('#videoBar .trimend').style.left = left;
+            document.querySelector('#videoBar .trimend').style.left = leftVisible;
             
             video.currentTime = trimEndPos = percent*video.duration;
             document.getElementById('currentTime').textContent = secondsToTime(Math.floor(percent*video.duration));
@@ -153,7 +157,7 @@ module.exports = (video, error) => {
             document.getElementById('endTime').textContent = secondsToTime(Math.floor(trimEndPos - trimStartPos));
             
             if (trimEndPos <= videoPos)
-                document.querySelector('#videoBar .position').style.left = left;
+                document.querySelector('#videoBar .position').style.left = leftVisible;
             else
                 document.querySelector('#videoBar .position').style.left = savedLeftPosition;
             
@@ -167,9 +171,10 @@ module.exports = (video, error) => {
             else if (left > volumeBar.width)
                 left = volumeBar.width;
             
-            let percent = left/volumeBar.width;
+            let percent = left/volumeBar.width,
+                leftVisible = percent*parseFloat(getComputedStyle(document.getElementById('volumeBar')).width);
             
-            document.querySelector('#volumeBar .position').style.left = left;
+            document.querySelector('#volumeBar .position').style.left = leftVisible;
             
             video.volume = percent;
             
@@ -257,7 +262,8 @@ module.exports = (video, error) => {
         },
         data: () => {
             return { trimStartPos, trimEndPos, duration: trimEndPos-trimStartPos };
-        }
+        },
+        onload: func => {onload = func;}
     };
     
 };

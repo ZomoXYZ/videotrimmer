@@ -8,77 +8,84 @@
             <input type="file" id="fileupload">
             <span>Click To Choose File</span>
         </label>
+        <div id="version"></div>
     </div>
     <div id="processingVideo">
         <div>Processing Video</div>
     </div>
     <div id="editor">
-        <video></video>
-        <div id="playbackDetails">
-            <div id="videoBar">
-                <span class="position"></span>
-                <span class="trimstart"></span>
-                <span class="trimend"></span>
-            </div>
-            <div class="line2">
-                <span id="currentTime"></span>
-                <span id="endTime"></span>
-                <span id="volumeBar">
+        <div id="editorInner">
+            <video></video>
+            <div id="playbackDetails">
+                <div id="videoBar">
                     <span class="position"></span>
-                </span>
+                    <span class="trimstart"></span>
+                    <span class="trimend"></span>
+                </div>
+                <div class="line2">
+                    <span id="currentTime"></span>
+                    <span id="endTime"></span>
+                    <span id="volumeBar">
+                        <span class="position"></span>
+                    </span>
+                </div>
             </div>
+            <div id="quickoptions">
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" id="fixmic" a:channels="2">
+                        <svg viewBox="0 0 21 21">
+                            <polyline points="5 10.75 8.5 14.25 16 6"></polyline>
+                        </svg>
+                        <span>Fix Mic and Combine Audio</span>
+                    </label>
+                </div>
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" id="onlygame" a:channels="2">
+                        <svg viewBox="0 0 21 21">
+                            <polyline points="5 10.75 8.5 14.25 16 6"></polyline>
+                        </svg>
+                        <span>Only Game Audio</span>
+                    </label>
+                </div>
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" id="tocompress">
+                        <svg viewBox="0 0 21 21">
+                            <polyline points="5 10.75 8.5 14.25 16 6"></polyline>
+                        </svg>
+                        <span>Compress</span>
+                    </label>
+                    <label class="smaller">
+                        <input type="checkbox" id="compresssecondfile" disabled>
+                        <svg viewBox="0 0 21 21">
+                            <polyline points="5 10.75 8.5 14.25 16 6"></polyline>
+                        </svg>
+                        <span>as another file</span>
+                    </label>
+                </div>
+                <!--compress checkbox-->
+                <!--allow to compress as a second file-->
+                <!--fix mic/combine audio tracks-->
+                <!--remove second audio track-->
+            </div>
+            <div id="finish">
+                <span class="button">Finish</span>
+            </div>
+            <!--video-->
+            <!--video trimmer/progress bar-->
+            <!--checkboxes for the 3 bat files-->
+            <!--some hidden advanced options-->
         </div>
-        <div id="quickoptions">
-            <div class="checkbox">
-                <label>
-                    <input type="checkbox" id="fixmic" a:channels="2">
-                    <svg viewBox="0 0 21 21">
-                        <polyline points="5 10.75 8.5 14.25 16 6"></polyline>
-                    </svg>
-                    <span>Fix Mic and Combine Audio</span>
-                </label>
-            </div>
-            <div class="checkbox">
-                <label>
-                    <input type="checkbox" id="onlygame" a:channels="2">
-                    <svg viewBox="0 0 21 21">
-                        <polyline points="5 10.75 8.5 14.25 16 6"></polyline>
-                    </svg>
-                    <span>Only Game Audio</span>
-                </label>
-            </div>
-            <div class="checkbox">
-                <label>
-                    <input type="checkbox" id="tocompress">
-                    <svg viewBox="0 0 21 21">
-                        <polyline points="5 10.75 8.5 14.25 16 6"></polyline>
-                    </svg>
-                    <span>Compress</span>
-                </label>
-                <label class="smaller">
-                    <input type="checkbox" id="compresssecondfile" disabled>
-                    <svg viewBox="0 0 21 21">
-                        <polyline points="5 10.75 8.5 14.25 16 6"></polyline>
-                    </svg>
-                    <span>as another file</span>
-                </label>
-            </div>
-            <!--compress checkbox-->
-            <!--allow to compress as a second file-->
-            <!--fix mic/combine audio tracks-->
-            <!--remove second audio track-->
-        </div>
-        <div id="finish">
-            <span class="button">Finish</span>
-        </div>
-        <!--video-->
-        <!--video trimmer/progress bar-->
-        <!--checkboxes for the 3 bat files-->
-        <!--some hidden advanced options-->
     </div>
     <div id="editsprogress">
         <div id="progress">
             <div class="progressbar"><div class="progressinner"></div></div>
+        </div>
+        <div id="return">
+            <span id="returncancel" class="button">Cancel</span>
+            <span id="returndone" class="button">Done</span>
         </div>
         <div id="consoleoutput">
             <pre></pre>
