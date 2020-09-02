@@ -10,6 +10,10 @@
 
 ### v0.0.4
 
+**fixes**
+
+- page will (finally) no longer flicker when file is hovering over page
+
 **additions**
 
 - version number is now displayed on primary screen
