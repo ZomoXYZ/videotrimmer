@@ -20,7 +20,7 @@
 - editor screen will scale down if it isn't all visible
 - added a cancel/finish button to final page
 
-**versions lower than this were numbered incorrectly, and have been fixed above**
+#### versions lower than this were numbered incorrectly, and have been fixed above
 
 ### v0.0.3
 
