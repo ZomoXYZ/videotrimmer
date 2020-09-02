@@ -8,7 +8,7 @@
 
 ## changelog
 
-### v0.0.4
+### v0.4.0
 
 **fixes**
 
@@ -19,6 +19,8 @@
 - version number is now displayed on primary screen
 - editor screen will scale down if it isn't all visible
 - added a cancel/finish button to final page
+
+**versions lower than this were numbered incorrectly, and have been fixed above**
 
 ### v0.0.3
 
