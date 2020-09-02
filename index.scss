@@ -663,7 +663,7 @@ body {
 .hoveringVideo {
     #uploadVideo {
         opacity: 0;
-        pointer-events: none;
+        pointer-events: all;
     }
     #processingVideo {
         opacity: 0;
@@ -683,6 +683,6 @@ body {
     }
     #hoveringVideo {
         opacity: 1;
-        pointer-events: all;
+        pointer-events: none;
     }
 }

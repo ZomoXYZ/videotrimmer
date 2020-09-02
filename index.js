@@ -133,10 +133,7 @@ addEventListener('load', () => {
     });
     document.addEventListener('dragleave', e => {
         draggedover = false;
-        setTimeout(() => {
-            if (!draggedover)
-                document.body.classList.remove('hoveringVideo');
-        }, 10);
+        document.body.classList.remove('hoveringVideo');
     });
     document.addEventListener('drop', e => {
         if (!blockFile) {
