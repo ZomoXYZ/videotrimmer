@@ -107,6 +107,7 @@ body {
  * general
  * 
  * upload screen
+ * loading screen
  * processing video
  * editing page
  * loading edits
@@ -220,6 +221,10 @@ body {
     opacity: 1;
     pointer-events: all;
 }
+#loadingMain {
+    opacity: 0;
+    pointer-events: none;
+}
 #processingVideo {
     opacity: 0;
     pointer-events: none;
@@ -258,9 +263,45 @@ body {
     }
 }
 
+/*loading screen*/
+.loadingMain {
+    #uploadVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #loadingMain {
+        opacity: 1;
+        pointer-events: all;
+    }
+    #processingVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #editor {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #editsprogress {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #error {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #hoveringVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
 /*processing video*/
 .processing {
     #uploadVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #loadingMain {
         opacity: 0;
         pointer-events: none;
     }
@@ -289,6 +330,10 @@ body {
 /*editing page*/
 .editor {
     #uploadVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #loadingMain {
         opacity: 0;
         pointer-events: none;
     }
@@ -485,6 +530,10 @@ body {
         opacity: 0;
         pointer-events: none;
     }
+    #loadingMain {
+        opacity: 0;
+        pointer-events: none;
+    }
     #processingVideo {
         opacity: 0;
         pointer-events: none;
@@ -616,6 +665,10 @@ body {
         opacity: 0;
         pointer-events: none;
     }
+    #loadingMain {
+        opacity: 0;
+        pointer-events: none;
+    }
     #processingVideo {
         opacity: 0;
         pointer-events: none;
@@ -639,9 +692,13 @@ body {
 }
 
 #error {
+    
+    display: flex;
+    
     .bold {
         font-family: OpenSans-Bold;
         font-size: 48px;
+        text-align: center;
         
         [theme=light] & {
             color: #d77;
@@ -652,9 +709,34 @@ body {
     }
     .small {
         font-size: 16px;
+        text-align: center;
         
         &:hover {
             text-decoration: underline;
+        }
+    }
+    
+    #errordisplay {
+        width: 100%;
+        flex-grow: 1;
+        padding: 15px;
+        
+        pre {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 5px;
+            height: 100%;
+            width: 100%;
+            background: var(--button-background);
+            overflow-x: hidden;
+            overflow-y: scroll;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-wrap: break-word;
+            word-break: break-all;
+            white-space: pre-wrap;
+            
+            user-select: initial;
         }
     }
 }
@@ -664,6 +746,10 @@ body {
     #uploadVideo {
         opacity: 0;
         pointer-events: all;
+    }
+    #loadingMain {
+        opacity: 0;
+        pointer-events: none;
     }
     #processingVideo {
         opacity: 0;

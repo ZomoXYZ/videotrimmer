@@ -1,6 +1,6 @@
 <link rel="stylesheet" href="index.css">
 <script src="index.js"></script>
-<body theme="dark">
+<body theme="dark" class="loadingMain">
     <div id="uploadVideo">
         <div>Drag Video To Edit</div>
         <div>or</div>
@@ -9,6 +9,9 @@
             <span>Click To Choose File</span>
         </label>
         <div id="version"></div>
+    </div>
+    <div id="loadingMain">
+        <div>Loading</div>
     </div>
     <div id="processingVideo">
         <div>Processing Video</div>
@@ -92,8 +95,13 @@
         </div>
     </div>
     <div id="error">
-        <div class="bold">ERROR</div>
-        <div class="small">click here to open the console</div>
+        <div id="errortop">
+            <div class="bold">ERROR</div>
+            <div class="small">click here to open the console</div>
+        </div>
+        <div id="errordisplay">
+            <pre></pre>
+        </div>
     </div>
     <div id="hoveringVideo">
         <div>Release To Edit</div>

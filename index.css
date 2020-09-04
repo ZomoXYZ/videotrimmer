@@ -99,6 +99,7 @@ body > div {
  * general
  * 
  * upload screen
+ * loading screen
  * processing video
  * editing page
  * loading edits
@@ -207,6 +208,11 @@ body > div {
   pointer-events: all;
 }
 
+#loadingMain {
+  opacity: 0;
+  pointer-events: none;
+}
+
 #processingVideo {
   opacity: 0;
   pointer-events: none;
@@ -248,8 +254,42 @@ body > div {
   opacity: 0.5;
 }
 
+/*loading screen*/
+.loadingMain #uploadVideo {
+  opacity: 0;
+  pointer-events: none;
+}
+.loadingMain #loadingMain {
+  opacity: 1;
+  pointer-events: all;
+}
+.loadingMain #processingVideo {
+  opacity: 0;
+  pointer-events: none;
+}
+.loadingMain #editor {
+  opacity: 0;
+  pointer-events: none;
+}
+.loadingMain #editsprogress {
+  opacity: 0;
+  pointer-events: none;
+}
+.loadingMain #error {
+  opacity: 0;
+  pointer-events: none;
+}
+.loadingMain #hoveringVideo {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /*processing video*/
 .processing #uploadVideo {
+  opacity: 0;
+  pointer-events: none;
+}
+.processing #loadingMain {
   opacity: 0;
   pointer-events: none;
 }
@@ -276,6 +316,10 @@ body > div {
 
 /*editing page*/
 .editor #uploadVideo {
+  opacity: 0;
+  pointer-events: none;
+}
+.editor #loadingMain {
   opacity: 0;
   pointer-events: none;
 }
@@ -448,6 +492,10 @@ body > div {
   opacity: 0;
   pointer-events: none;
 }
+.editsprogress #loadingMain {
+  opacity: 0;
+  pointer-events: none;
+}
 .editsprogress #processingVideo {
   opacity: 0;
   pointer-events: none;
@@ -548,6 +596,10 @@ body > div {
   opacity: 0;
   pointer-events: none;
 }
+.error #loadingMain {
+  opacity: 0;
+  pointer-events: none;
+}
 .error #processingVideo {
   opacity: 0;
   pointer-events: none;
@@ -569,9 +621,13 @@ body > div {
   pointer-events: none;
 }
 
+#error {
+  display: flex;
+}
 #error .bold {
   font-family: OpenSans-Bold;
   font-size: 48px;
+  text-align: center;
 }
 [theme=light] #error .bold {
   color: #d77;
@@ -581,15 +637,41 @@ body > div {
 }
 #error .small {
   font-size: 16px;
+  text-align: center;
 }
 #error .small:hover {
   text-decoration: underline;
+}
+#error #errordisplay {
+  width: 100%;
+  flex-grow: 1;
+  padding: 15px;
+}
+#error #errordisplay pre {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 5px;
+  height: 100%;
+  width: 100%;
+  background: var(--button-background);
+  overflow-x: hidden;
+  overflow-y: scroll;
+  font-family: monospace;
+  font-size: 12px;
+  overflow-wrap: break-word;
+  word-break: break-all;
+  white-space: pre-wrap;
+  user-select: initial;
 }
 
 /*hovering over with image screen*/
 .hoveringVideo #uploadVideo {
   opacity: 0;
   pointer-events: all;
+}
+.hoveringVideo #loadingMain {
+  opacity: 0;
+  pointer-events: none;
 }
 .hoveringVideo #processingVideo {
   opacity: 0;

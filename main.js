@@ -3,6 +3,8 @@ const {app, BrowserWindow, ipcMain, Tray, nativeImage} = require('electron'),
       url = require('url'),
       fs = require('fs');
 
+var IsLoaded = false;
+
 let mainWindow;
 
 ipcMain.on('exit', (event, arg) => {
@@ -16,21 +18,22 @@ ipcMain.on('devtools', event => { //is there a way to do this without ipc?
     });
 });
 
+ipcMain.on('isLoaded', (event, arg) => {
+    if (IsLoaded)
+        mainWindow.webContents.send('loaded', getAppDataPath());
+});
+
 function getAppDataPath() {
      switch (process.platform) {
-        case 'darwin': {
+        case 'darwin':
             return path.join(process.env.HOME, 'Library', 'Application Support', 'Ashley-VideoTrimmer');
-        }
-         case 'win32': {
+         case 'win32':
              return path.join(process.env.APPDATA, 'Ashley-VideoTrimmer');
-         }
-         case 'linux': {
+         case 'linux':
              return path.join(process.env.HOME, '.Ashley-VideoTrimmer');
-         }
-         default: {
+         default:
              console.log('Unsupported platform!');
              process.exit(1);
-         }
      }
 }
 
@@ -40,13 +43,17 @@ if (!fs.existsSync(getAppDataPath()))
 //https://electron.atom.io/docs/tutorial/quick-start/
 function downloadFfmpeg() {
     
-    if (!fs.existsSync(path.join(getAppDataPath(), 'ffmpeg-binaries', 'ffmpeg')) || !fs.existsSync(path.join(getAppDataPath(), 'ffmpeg-binaries', 'ffprobe')))
-        require('ffbinaries').downloadBinaries({
-            destination: path.join(getAppDataPath(), 'ffmpeg-binaries'),
-            components: ['ffmpeg', 'ffprobe']
-        }, createWindow);
-    else
-        createWindow();
+    return new Promise((complete, error) => {
+    
+        if (!fs.existsSync(path.join(getAppDataPath(), 'ffmpeg-binaries', 'ffmpeg')) || !fs.existsSync(path.join(getAppDataPath(), 'ffmpeg-binaries', 'ffprobe')))
+            require('ffbinaries').downloadBinaries({
+                destination: path.join(getAppDataPath(), 'ffmpeg-binaries'),
+                components: ['ffmpeg', 'ffprobe']
+            }, complete);
+        else
+            complete();
+        
+    });
     
 }
 function createWindow() {
@@ -76,14 +83,20 @@ function createWindow() {
         mainWindow = null;
     });
     
+    downloadFfmpeg().then(() => {
+        IsLoaded = true;
+        console.log(getAppDataPath())
+        mainWindow.webContents.send('loaded', getAppDataPath());
+    });
+    
 }
 
 //on ready
 if (app.isReady())
-    downloadFfmpeg();
-app.on('ready', downloadFfmpeg);
+    createWindow();
+app.on('ready', createWindow);
 
 // Quit when all windows are closed.
-app.on('window-all-closed', function () {
+app.on('window-all-closed', () => {
     app.quit();
 });

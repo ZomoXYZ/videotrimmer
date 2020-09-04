@@ -20,16 +20,9 @@ const {ipcRenderer, webFrame} = require('electron'),
           if (minutes < 10) {minutes = "0"+minutes;}
           if (seconds < 10) {seconds = "0"+seconds;}
           return minutes+':'+seconds;
-      },
+      };
 
-      
-      //ffmpeg binaries https://ffbinaries.com/downloads
-      ffDir = path.join(getAppDataPath(), 'ffmpeg-binaries'),
-      ffmpegDir = path.join(ffDir, 'ffmpeg'),
-      ffprobeDir = path.join(ffDir, 'ffprobe');
-
-//aaaaaah
-ffmpeg.setFfmpegPath(ffmpegDir);
+var ffDir, ffmpegDir, ffprobeDir;
 
 //easy round functions
 const round = (num, closest=1) => Math.round(num/closest)*closest;
@@ -42,33 +35,35 @@ const mapNumber = (num, in_min, in_max, out_min, out_max) => {
     return (num - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 };
 
-
-//Location to store ffmpeg binaries
-function getAppDataPath() {
-    switch (process.platform) {
-        case 'darwin': {
-            return path.join(process.env.HOME, 'Library', 'Application Support', 'Ashley-VideoTrimmer');
-        }
-        case 'win32': {
-            return path.join(process.env.APPDATA, 'Ashley-VideoTrimmer');
-        }
-        case 'linux': {
-            return path.join(process.env.HOME, '.Ashley-VideoTrimmer');
-        }
-        default: {
-            ipcRenderer.send('exit', 'Unsupported platform');
-        }
-    }
-}
-
 //prevent zooming
 webFrame.setVisualZoomLevelLimits(1, 1);
 
-//in case an error happened in main.js
-if (!fs.existsSync(ffDir))
-    ipcRenderer.send('exit', 'OS IS NOT SET UP');
+//on ffmpeg downloaded
+var MainReady = false;
+ipcRenderer.on('loaded', (event, data) => {
+    
+    //ffmpeg binaries https://ffbinaries.com/downloads
+    ffDir = path.join(data, 'ffmpeg-binaries');
+    ffmpegDir = path.join(ffDir, 'ffmpeg');
+    ffprobeDir = path.join(ffDir, 'ffprobe');
+
+    //in case an error happened in main.js
+    if (!fs.existsSync(ffDir))
+        ipcRenderer.send('exit', 'OS IS NOT SET UP');
+
+    //aaaaaah
+    ffmpeg.setFfmpegPath(ffmpegDir);
+    
+    //block file hover
+    if (['complete', 'interactive'].includes(document.readyState))
+        document.body.classList.remove('loadingMain');
+});
+ipcRenderer.send('isLoaded');
 
 addEventListener('load', () => {
+    
+    if (MainReady)
+        document.body.classList.remove('loadingMain');
     
     //declarations outside of page scope
     const videoEditor = require('./modules/editor.js')(document.querySelector('#editor video'), () => {
@@ -184,7 +179,6 @@ addEventListener('load', () => {
         probe.stderr.on('data', stderr => {
             console.error('stderr', stderr);
             document.body.classList.remove('processing');
-            document.body.classList.add('error');
         });
 
         probe.on('close', code => {
@@ -538,7 +532,6 @@ addEventListener('load', () => {
         }).catch(err => {
             console.error('error', err);
             document.body.classList.remove('editsprogress');
-            document.body.classList.add('error');
         });
         
         
@@ -555,5 +548,37 @@ addEventListener('load', () => {
     document.querySelector('#error .small').addEventListener('click', () => {
         ipcRenderer.send('devtools');
     });
+    
+    //select entire error on click
+    document.querySelector('#errordisplay pre').addEventListener('click', () => {
+        var range = document.createRange();
+        range.selectNode(document.querySelector('#errordisplay pre'));
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+    });
 
+});
+
+//the error object is dumb and will not JSON.stringify correctly
+function jsonifyerror(msg) {
+    let obj = {};
+    for (let key in msg) {
+        if (key === 'error')
+            obj.error = {
+                message: msg.error.message,
+                stack: msg.error.stack
+            };
+        else if (!['currentTarget', 'path', 'srcElement', 'target'].includes(key))
+            obj[key] = msg[key];
+    }
+    
+    return obj;
+}
+
+//general error catch
+addEventListener('error', (msg, url, line, col, error) => {
+    let fixedmsg = jsonifyerror(msg);
+    document.body.classList.add('error');
+    document.querySelector('#errordisplay pre').textContent = JSON.stringify(fixedmsg, null, 2);
+    console.log(msg, fixedmsg);
 });

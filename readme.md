@@ -8,6 +8,13 @@
 
 ## changelog
 
+### v0.4.1
+
+**additions**
+
+- window will start up immediately and say Loading while downloading ffmpeg
+- error screen has been updated to catch all errors on its own and to display the error
+
 ### v0.4.0
 
 **fixes**
