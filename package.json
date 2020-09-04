@@ -48,6 +48,22 @@
         "pack": "electron-builder --dir",
         "dist": "electron-builder"
     },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/ZomoXYZ/videotrimmer.git"
+    },
+    "keywords": [
+        "video",
+        "trimmer",
+        "video-trimmer",
+        "electron",
+        "electron-app",
+        "nvidia-shadowplay"
+    ],
+    "bugs": {
+      "url": "https://github.com/ZomoXYZ/videotrimmer/issues"
+    },
+    "homepage": "https://github.com/ZomoXYZ/videotrimmer",
     "devDependencies": {
         "electron": "^9.2.0",
         "electron-builder": "^22.8.0"
