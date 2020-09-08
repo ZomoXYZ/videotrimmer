@@ -8,6 +8,12 @@
 
 ## changelog
 
+### v0.4.2
+
+**fixes**
+
+- critical error preventing user from using left/right arrow keys in editor page
+
 ### v0.4.1
 
 **additions**

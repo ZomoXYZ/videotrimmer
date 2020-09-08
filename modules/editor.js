@@ -14,7 +14,9 @@ module.exports = (video, onload, error) => {
         volumeDragging = false,
         savedLeftPosition = 0,
         
-        isOpen = false;
+        isOpen = false,
+        
+        videoData = {};
     
     //calculate where the positions of each point should be in each bar
     function calculatePositionBar() {
@@ -198,11 +200,11 @@ module.exports = (video, onload, error) => {
     const keysHolding = {
         ArrowLeft: () => {
             video.pause();
-            video.currentTime = videoPos = Math.max(trimStartPos, video.currentTime - (1/data.streams.primary.video.framerate));
+            video.currentTime = videoPos = Math.max(trimStartPos, video.currentTime - (1/videoData.streams.primary.video.framerate));
         },
         ArrowRight: () => {
             video.pause();
-            video.currentTime = videoPos = Math.min(trimEndPos, video.currentTime + (1/data.streams.primary.video.framerate));
+            video.currentTime = videoPos = Math.min(trimEndPos, video.currentTime + (1/videoData.streams.primary.video.framerate));
         },
         ArrowUp: () => {
             video.volume = Math.min(1, video.volume + .05);
@@ -255,7 +257,10 @@ module.exports = (video, onload, error) => {
             isOpen = true;
             
         },
-        src: src => video.setAttribute('src', src),
+        src: (src, data) => {
+            video.setAttribute('src', src);
+            videoData = data;
+        },
         close: () => {
             video.pause();
             isOpen = false;

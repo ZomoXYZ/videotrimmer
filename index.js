@@ -287,7 +287,7 @@ addEventListener('load', () => {
                 input.parentElement.classList.remove('disabled');
         });
         
-        videoEditor.src(file.path);
+        videoEditor.src(file.path, data);
         
     }
     
