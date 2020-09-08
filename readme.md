@@ -13,6 +13,7 @@
 **fixes**
 
 - critical error preventing user from using left/right arrow keys in editor page
+- update checker now works
 
 ### v0.4.1
 

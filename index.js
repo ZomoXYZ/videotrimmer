@@ -85,10 +85,11 @@ addEventListener('load', () => {
     document.getElementById('version').textContent = Version;
     
     //check for update
-    require('https').get('https://raw.githubusercontent.com/ZomoXYZ/videotrimmer/master/package.json', res => {
-        res.on('data', data => {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (xhttp.readyState === 4 && xhttp.status === 200) {
             try {
-                data = JSON.parse(data);
+                let data = JSON.parse(xhttp.response);
                 
                 let currentVersion = Version.split('.'),
                     newVersion = data.version.split('.');
@@ -103,8 +104,10 @@ addEventListener('load', () => {
                 }
                 
             } catch(e) {}
-        });
-    });
+        }
+    };
+    xhttp.open('GET', 'https://raw.githubusercontent.com/ZomoXYZ/videotrimmer/master/package.json');
+    xhttp.send();
     
     //html's "video/*" sucks so this accepts all actual videos
     var videoExts = [];
