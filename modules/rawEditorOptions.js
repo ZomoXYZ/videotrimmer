@@ -46,18 +46,19 @@ module.exports = {
             dynamic: {
                 visibility: null,
                 disabled: null
-            }
+            },
+            run: ffmpeg => {}
         },
         compresssecondfile: {
-            parent: "tocompress",
-            type: "checkbox",
+            parent: "tocompress",//parent must be of same type, so type option is unnecessary
             label: "as another file",
             visibility: true,
             disabled: true,
             dynamic: {
                 visibility: null,
                 disabled: info => info.options.tocompress.checked
-            }
+            },
+            run: ffmpeg => { }
         },
         compresssecondfile: {
             parent: "tocompress",
@@ -76,7 +77,8 @@ module.exports = {
                 visibility: null,
                 disabled: info => info.options.tocompress.checked
             }
-        }
+        },
+        run: ffmpeg => { }
     },
     advance: {
 
