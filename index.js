@@ -61,6 +61,9 @@ ipcRenderer.on('loaded', (event, data) => {
 ipcRenderer.send('isLoaded');
 
 addEventListener('load', () => {
+
+    var blockFile = true, //should block file from being dragged over
+        draggedover = false;
     
     if (MainReady)
         document.body.classList.remove('loadingMain');
@@ -115,9 +118,6 @@ addEventListener('load', () => {
         if (mime._types[ext].startsWith('video/'))
             videoExts.push('.'+ext);
     document.getElementById('fileupload').setAttribute('accept', videoExts.join(','));
-    
-    var blockFile = false, //should block file from being dragged over
-        draggedover = false;
     
     //file drag+drop listeners
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {

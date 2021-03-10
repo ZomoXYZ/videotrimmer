@@ -1,3 +1,5 @@
+const editorOptions = require('./editorOptions.js');
+
 module.exports = (video, onload, error) => {
     /*
      * video: video html element
@@ -259,6 +261,7 @@ module.exports = (video, onload, error) => {
         },
         src: (src, data) => {
             video.setAttribute('src', src);
+            editorOptions.generate();
             videoData = data;
         },
         close: () => {
