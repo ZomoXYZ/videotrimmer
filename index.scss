@@ -719,6 +719,7 @@ body {
     #errordisplay {
         width: 100%;
         flex-grow: 1;
+        overflow-y: scroll;
         padding: 15px;
         
         pre {
