@@ -261,7 +261,7 @@ module.exports = (video, onload, error) => {
         },
         src: (src, data) => {
             video.setAttribute('src', src);
-            editorOptions.generate();
+            editorOptions.generate(data);
             videoData = data;
         },
         close: () => {
