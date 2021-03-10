@@ -39,7 +39,8 @@ const mapNumber = (num, in_min, in_max, out_min, out_max) => {
 webFrame.setVisualZoomLevelLimits(1, 1);
 
 //on ffmpeg downloaded
-var MainReady = false;
+var MainReady = false,
+    blockFile = true;//should block file from being dragged over
 ipcRenderer.on('loaded', (event, data) => {
     
     //ffmpeg binaries https://ffbinaries.com/downloads
@@ -53,20 +54,24 @@ ipcRenderer.on('loaded', (event, data) => {
 
     //aaaaaah
     ffmpeg.setFfmpegPath(ffmpegDir);
+
+    MainReady = true;
     
-    //block file hover
-    if (['complete', 'interactive'].includes(document.readyState))
+    if (['complete', 'interactive'].includes(document.readyState)) {
         document.body.classList.remove('loadingMain');
+        blockFile = false;
+    }
 });
 ipcRenderer.send('isLoaded');
 
 addEventListener('load', () => {
 
-    var blockFile = true, //should block file from being dragged over
-        draggedover = false;
+    var draggedover = false;
     
-    if (MainReady)
+    if (MainReady) {
         document.body.classList.remove('loadingMain');
+        blockFile = false;
+    }
     
     //declarations outside of page scope
     const videoEditor = require('./modules/editor.js')(document.querySelector('#editor video'), () => {
@@ -103,7 +108,8 @@ addEventListener('load', () => {
                     if (nv > cv) {
                         document.getElementById('version').classList.add('update');
                         break;
-                    }
+                    } else if (cv > nv)
+                        break;
                 }
                 
             } catch(e) {}
@@ -295,7 +301,7 @@ addEventListener('load', () => {
     }
     
     //checkbox exclusivity listeners
-    document.getElementById('fixmic').addEventListener('change', e => {
+    /*document.getElementById('fixmic').addEventListener('change', e => {
         if (e.target.checked) {
             document.getElementById('onlygame').checked = false;
             document.getElementById('onlygame').setAttribute('disabled', '');
@@ -317,7 +323,7 @@ addEventListener('load', () => {
             document.getElementById('compresssecondfile').removeAttribute('disabled');
     });
     document.getElementById('compresssecondfile').addEventListener('change', e => {
-    });
+    });*/
     
     //finish button
     document.querySelector('#finish .button').addEventListener('click', finishButton);
