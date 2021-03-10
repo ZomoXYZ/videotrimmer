@@ -5,10 +5,10 @@ module.exports = {
             type: "checkbox",
             label: "Fix Mic and Combine Audio",
             visibility: false,
-            disabled: false,
+            enabled: true,
             dynamic: {
-                visibility: info => info.audio.channels >= 2,
-                disabled: info => info.options.onlygame.checked
+                visibility: info => info.data.streams.audio.length >= 2,
+                enabled: info => !info.options.basic.onlygame
             },
             run: ffmpeg => ffmpeg.complexFilter([
                         {
@@ -30,10 +30,10 @@ module.exports = {
             type: "checkbox",
             label: "Only Game Audio",
             visibility: false,
-            disabled: false,
+            enabled: true,
             dynamic: {
-                visibility: info => info.audio.channels >= 2,
-                disabled: info => info.options.fixmic.checked
+                visibility: info => info.data.streams.audio.length >= 2,
+                enabled: info => !info.options.basic.fixmic
             },
             run: ffmpeg => ffmpeg.outputOptions('-map', '0:v:0', '-map', '0:a:0')
         },
@@ -42,26 +42,33 @@ module.exports = {
             type: "checkbox",
             label: "Compress",
             visibility: true,
-            disabled: false,
+            enabled: true,
             dynamic: {
                 visibility: null,
-                disabled: null
+                enabled: null
             },
-            run: ffmpeg => {}
+            run: (ffmpeg, info) => {
+                if (info.options.basic.compresssecondfile) {
+                    //do as second file
+                } else {
+                    //do as single file
+                }
+                info.options.basic.compressType // compression type
+            }
         },
         compresssecondfile: {
             parent: "tocompress",//parent must be of same type, so type option is unnecessary
             label: "as another file",
             visibility: true,
-            disabled: true,
+            enabled: false,
             dynamic: {
                 visibility: null,
-                disabled: info => info.options.tocompress.checked
+                enabled: info => info.options.basic.tocompress
             },
-            run: ffmpeg => { }
+            run: null
         },
-        compresssecondfile: {
-            parent: "tocompress",
+        compresstype: {
+            parent: null,
             type: "dropdown",
             dropdown: [
                 ["auto", "auto"],
@@ -70,15 +77,16 @@ module.exports = {
                 ["medium", "medium"],
                 ["small", "small"],
             ],
+            value: "discord",
             label: "File size",
             visibility: true,
-            disabled: true,
+            enabled: false,
             dynamic: {
                 visibility: null,
-                disabled: info => info.options.tocompress.checked
-            }
-        },
-        run: ffmpeg => { }
+                enabled: info => info.options.basic.tocompress
+            },
+            run: null
+        }
     },
     advance: {
 
