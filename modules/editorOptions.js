@@ -14,7 +14,7 @@ function genInfo() {
     };
 
     for (let id in options.basic) {
-        let elem = document.getElementById('basic_' + id),
+        let elem = document.getElementById(/*'basic_'*/'' + id),
             val = null;
 
         switch (options.basic[id].type) {
@@ -41,7 +41,7 @@ function updateValues() {
 
     for (let id in options.basic) {
         let { dynamic } = options.basic[id],
-            elem = document.getElementById('basic_' + id);
+            elem = document.getElementById(/*'basic_'*/'' + id);
 
         if (id === 'tocompress') {
             console.log('yeah');
@@ -93,7 +93,7 @@ function createDropdown(id, options) {
 
     {
         let select = document.createElement('select');
-        select.setAttribute('id', 'basic_' + id);
+        select.setAttribute('id', /*'basic_'*/'' + id);
 
         for (let option of options.dropdown) {
             let opt = document.createElement('option');
@@ -122,7 +122,7 @@ function createCheckbox(id, options) {
     {
         let input = document.createElement('input');
         input.setAttribute('type', 'checkbox');
-        input.setAttribute('id', 'basic_' + id);
+        input.setAttribute('id', /*'basic_'*/'' + id);
 
         onUpdateValues(input);
 
@@ -180,7 +180,7 @@ function generateOptions(data) {
         let html = createHTML(type, id, basic[id]);
 
         if (basic[id].parent !== null) {
-            let bigcontainer = document.getElementById('basic_' + basic[id].parent).parentElement.parentElement;
+            let bigcontainer = document.getElementById(/*'basic_'*/'' + basic[id].parent).parentElement.parentElement;
             html.classList.add('smaller');
             bigcontainer.appendChild(html);
         } else {

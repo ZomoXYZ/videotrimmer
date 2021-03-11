@@ -71,10 +71,6 @@ html {
   box-sizing: inherit;
 }
 
-[hidden] {
-  visibility: hidden;
-}
-
 body {
   margin: 0;
   width: 100%;

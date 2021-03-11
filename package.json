@@ -65,12 +65,12 @@
     },
     "homepage": "https://github.com/ZomoXYZ/videotrimmer",
     "devDependencies": {
-        "electron": "^9.2.0",
-        "electron-builder": "^22.8.0"
+        "electron": "^9.4.4",
+        "electron-builder": "^22.10.5"
     },
     "dependencies": {
         "ffbinaries": "^1.1.4",
         "fluent-ffmpeg": "^2.1.2",
-        "mime": "^2.4.6"
+        "mime": "^2.5.2"
     }
 }
