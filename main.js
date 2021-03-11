@@ -1,6 +1,5 @@
 const {app, BrowserWindow, ipcMain, Tray, nativeImage} = require('electron'),
       path = require('path'),
-      url = require('url'),
       fs = require('fs');
 
 var IsLoaded = false;
@@ -70,12 +69,8 @@ function createWindow() {
             worldSafeExecuteJavaScript: true
         }
     });
-
-    mainWindow.loadURL(url.format({
-        pathname: path.join(__dirname, 'index.html'),
-        protocol: 'file:',
-        slashes: true
-    }));
+    
+    mainWindow.loadURL('file://' + path.join(__dirname, 'index.html'));
 
     //mainWindow.webContents.openDevTools();
 
