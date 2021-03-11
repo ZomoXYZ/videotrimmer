@@ -43,15 +43,31 @@ function updateValues() {
         let { dynamic } = options.basic[id],
             elem = document.getElementById('basic_' + id);
 
-        if (dynamic.visibility !== null) {
-            if (!dynamic.visibility(info))
-                elem.setAttribute('hidden', '')
-            else
-                elem.removeAttribute('hidden');
+        if (id === 'tocompress') {
+            console.log('yeah');
         }
 
-        if (dynamic.enabled !== null) {
-            if (!dynamic.enabled(info))
+        if (dynamic.visibility !== null && ['boolean', 'function'].includes(typeof dynamic.visibility)) {
+            let val = true;
+            if (typeof dynamic.visibility === 'function')
+                val = !dynamic.visibility(info);
+            else
+                val = !dynamic.visibility;
+
+            if (val)
+                elem.parentElement.parentElement.setAttribute('hidden', '')
+            else
+                elem.parentElement.parentElement.removeAttribute('hidden');
+        }
+
+        if (dynamic.enabled !== null && ['boolean', 'function'].includes(typeof dynamic.enabled)) {
+            let val = true;
+            if (typeof dynamic.enabled === 'function')
+                val = !dynamic.enabled(info);
+            else
+                val = !dynamic.enabled;
+
+            if (val)
                 elem.setAttribute('disabled', '')
             else
                 elem.removeAttribute('disabled');
@@ -107,12 +123,6 @@ function createCheckbox(id, options) {
         let input = document.createElement('input');
         input.setAttribute('type', 'checkbox');
         input.setAttribute('id', 'basic_' + id);
-
-        if (!options.visibility)
-            input.setAttribute('hidden', '');
-
-        if (!options.enabled)
-            input.setAttribute('disabled', '');
 
         onUpdateValues(input);
 

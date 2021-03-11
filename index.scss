@@ -76,6 +76,10 @@ html {
     }
 }
 
+[hidden] {
+    visibility: hidden;
+}
+
 body {
     margin: 0;
     width: 100%;
@@ -153,8 +157,7 @@ body {
         transform: scale(.7);
     }
     
-    input,
-    svg {
+    input, svg {
         width: 21px;
         height: 21px;
         display: block;
@@ -199,7 +202,7 @@ body {
     --stroke: var(--tick);
     input:checked {
         --s: 11px;
-        + svg {
+        & + svg {
             transition: transform 400ms ease-out;
             transform: scale(1) translateZ(0);
         }

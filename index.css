@@ -71,6 +71,10 @@ html {
   box-sizing: inherit;
 }
 
+[hidden] {
+  visibility: hidden;
+}
+
 body {
   margin: 0;
   width: 100%;
@@ -143,8 +147,7 @@ body > div {
 .checkbox > label.smaller {
   transform: scale(0.7);
 }
-.checkbox > label input,
-.checkbox > label svg {
+.checkbox > label input, .checkbox > label svg {
   width: 21px;
   height: 21px;
   display: block;

@@ -4,8 +4,6 @@ module.exports = {
             parent: null,
             type: "checkbox",
             label: "Fix Mic and Combine Audio",
-            visibility: false,
-            enabled: true,
             dynamic: {
                 visibility: info => info.data.streams.audio.length >= 2,
                 enabled: info => !info.options.basic.onlygame
@@ -29,8 +27,6 @@ module.exports = {
             parent: null,
             type: "checkbox",
             label: "Only Game Audio",
-            visibility: false,
-            enabled: true,
             dynamic: {
                 visibility: info => info.data.streams.audio.length >= 2,
                 enabled: info => !info.options.basic.fixmic
@@ -41,11 +37,9 @@ module.exports = {
             parent: null,
             type: "checkbox",
             label: "Compress",
-            visibility: true,
-            enabled: true,
             dynamic: {
-                visibility: null,
-                enabled: null
+                visibility: true,
+                enabled: true
             },
             run: (ffmpeg, info) => {
                 if (info.options.basic.compresssecondfile) {
@@ -59,10 +53,8 @@ module.exports = {
         compresssecondfile: {
             parent: "tocompress",//parent must be of same type, so type option is unnecessary
             label: "as another file",
-            visibility: true,
-            enabled: false,
             dynamic: {
-                visibility: null,
+                visibility: true,
                 enabled: info => info.options.basic.tocompress
             },
             run: null
@@ -79,10 +71,8 @@ module.exports = {
             ],
             value: "discord",
             label: "File size",
-            visibility: true,
-            enabled: false,
             dynamic: {
-                visibility: null,
+                visibility: true,
                 enabled: info => info.options.basic.tocompress
             },
             run: null
