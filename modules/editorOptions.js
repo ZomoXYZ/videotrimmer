@@ -16,9 +16,13 @@ function genInfo() {
 
     for (let id in options.basic) {
         let elem = document.getElementById('basic_' + id),
-            val = null;
+            val = null,
+            type = options.basic[id].type;
 
-        switch (options.basic[id].type) {
+        if (options.basic[id].parent !== null)
+            type = options.basic[options.basic[id].parent].type;
+
+        switch (type) {
             case 'checkbox':
                 val = elem.checked;
                 break;
@@ -198,67 +202,65 @@ class ffmpegWrapper {
         this.audio = false;
         this.video = false;
         this.commands = [];
-        this.infile = infile;
-        this.fnames = [outfile];
+        this.fnames = [infile, outfile];
         
-        console.log('constructor')
-        this.commands.push(fluentFFMPEG(path.format(infile)).output(path.format(infile)));
-        console.log(this.commands, this.commands.length - 1)
+        //this.commands.push(fluentFFMPEG(path.format(infile)).output(path.format(outfile)));
+        this.commands.push(fluentFFMPEG());
     }
 
     getOutput() {
-        return this.fnames[this.fnames.length - 1];
+        return Object.assign({}, this.fnames[this.fnames.length - 1]);
     }
 
     newCommand(fname, ffmpeg) {// path, fluentFFMPEG
-        console.log('newcommand')
-        console.log(this.commmands, this.commands.length - 1)
         if (ffmpeg)
             this.commands[this.commands.length - 1] = ffmpeg;
-        console.log(this.commmands, this.commands.length - 1)
-        this.commands.push(fluentFFMPEG(path.format(getOutput())).output(path.format(fname)));
+        
+        //this.commands.push(fluentFFMPEG(path.format(this.getOutput())).output(path.format(fname)));
+        this.commands.push(fluentFFMPEG());
         this.fnames.push(fname);
     }
 
     command(f, val) {// function(fluentFFMPEG, video info + commands, input value)
-        console.log('command')
-        console.log(this.commmands, this.commands.length - 1)
+
         let info = genInfo();
         info.newCommand = (fname, ffmpeg) => this.newCommand(fname, ffmpeg);
         info.getOutput = () => this.getOutput();
-        console.log(this.commmands, this.commands.length - 1)
-        this.commands[this.commands.length - 1] = f(this.commands[this.commands.length - 1], info, val);
-        //f(commands[this.commands.length - 1], genInfo(), val)
+        
+        let ran = f(this.commands[this.commands.length - 1], info, val);
+
+        if (ran instanceof fluentFFMPEG().constructor)
+            this.commands[this.commands.length - 1] = ran;
+        
     }
 
-    finish() { //WHY IS this.commands UNDEFINED AAAAAHHHHHH
+    finish() {
 
-        console.log(this.commands);
-
-        //let commands = this.commands;
+        let cmds = this.commands,
+            fname = this.fnames;
 
         return new Promise((complete, fail) => {
 
             let prepared = [];
 
             const prepare = i => {
-                this.commands[i]._prepare(function (err, args) {
+                cmds[i].input(path.format(fname[i])).output(path.format(fname[i+1]));
+                cmds[i]._prepare(function (err, args) {
                     if (err)
                         fail(err);
                     else {
                         prepared[i] = args;
-                        if (prepared.filter(p=>p).length === this.commands.length)
+                        if (prepared.filter(p=>p).length === cmds.length)
                             complete(prepared);
                     }
                 });
             }
 
-            for (let i = 0; i < this.commands.length; i++) {
-                console.log(i, this.commands[i], this.commands)
-                if (this.commands[i]._currentOutput.video.get('bitrate').length === 0)
-                    this.commands[i].videoCodec('copy');
-                if (this.commands[i]._currentOutput.audio.get('bitrate').length === 0)
-                    this.commands[i].audioCodec('copy');
+            for (let i = 0; i < cmds.length; i++) {
+                if (cmds[i]._currentOutput.video.get('bitrate').length === 0)
+                    cmds[i].videoCodec('copy');
+                if (cmds[i]._currentOutput.audio.get('bitrate').length === 0)
+                    cmds[i].audioCodec('copy');
 
                 prepare(i);
                 
@@ -273,7 +275,7 @@ module.exports = {
     generate: data => generateOptions(data), //create html for options from rawEditorOptions.js
     finish: videoSrc => {
 
-        var ffmpeg = new ffmpegWrapper(videoSrc, path.parse(videoSrc.name + '_edited' + videoSrc.ext));
+        var ffmpeg = new ffmpegWrapper(videoSrc, path.parse(`${videoSrc.dir}/${videoSrc.name}_edited${videoSrc.ext}`));
 
         for (let id in options.basic) {
             let { dynamic } = options.basic[id],

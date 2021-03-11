@@ -25,7 +25,7 @@ module.exports = (video, onload, error) => {
     function calculatePositionBar() {
         if (isOpen && !videoPositionDragging && !trimStartDragging && !trimEndDragging && !volumeDragging) {
             
-            console.log(trimStartPos, trimEndPos);
+            //console.log(trimStartPos, trimEndPos);
             
             if (video.currentTime >= trimEndPos && !video.paused)
                 video.pause();

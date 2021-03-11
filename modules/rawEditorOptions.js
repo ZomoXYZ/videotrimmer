@@ -42,8 +42,7 @@ module.exports = {
                 enabled: true
             },
             run: (ffmpeg, info) => {
-                
-                console.log(info.getOutput());
+
                 if (info.options.basic.compresssecondfile) {
                     let fname = info.getOutput();
                     fname.name = fname.name + '_compressed';
@@ -93,9 +92,7 @@ module.exports = {
                 visibility: true,
                 enabled: info => info.options.basic.tocompress
             },
-            run: (ffmpeg, info, val) => {
-
-            }
+            run: null
         }
     },
     advance: {
