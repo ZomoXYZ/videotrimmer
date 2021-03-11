@@ -179,10 +179,12 @@ function generateOptions(data) {
         type = type.toLowerCase();
 
         let html = createHTML(type, id, basic[id]);
+        
+        if (basic[id].small)
+            html.classList.add('smaller');
 
         if (basic[id].parent !== null) {
             let bigcontainer = document.getElementById('basic_' + basic[id].parent).parentElement.parentElement;
-            html.classList.add('smaller');
             bigcontainer.appendChild(html);
         } else {
             let bigcontainer = document.createElement('div');

@@ -258,7 +258,6 @@ module.exports = (video, onload, error) => {
             
         },
         src: (data) => {
-            console.log(data);
             videoSrc = data.path;
             video.setAttribute('src', path.format(data.path));
             editorOptions.generate(data);
