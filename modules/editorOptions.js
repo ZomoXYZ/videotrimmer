@@ -204,7 +204,6 @@ class ffmpegWrapper {
         this.commands = [];
         this.fnames = [infile, outfile];
         
-        //this.commands.push(fluentFFMPEG(path.format(infile)).output(path.format(outfile)));
         this.commands.push(fluentFFMPEG());
     }
 
@@ -216,7 +215,6 @@ class ffmpegWrapper {
         if (ffmpeg)
             this.commands[this.commands.length - 1] = ffmpeg;
         
-        //this.commands.push(fluentFFMPEG(path.format(this.getOutput())).output(path.format(fname)));
         this.commands.push(fluentFFMPEG());
         this.fnames.push(fname);
     }
