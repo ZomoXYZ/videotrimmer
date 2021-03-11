@@ -1,5 +1,6 @@
 const fluentFFMPEG = require('fluent-ffmpeg'),
-    options = require('./rawEditorOptions.js');
+    options = require('./rawEditorOptions.js'),
+    EventEmitter = require('events');
 
 var videoData = null;
 
@@ -35,17 +36,11 @@ function genInfo() {
 function updateValues() {
     let info = genInfo();
 
-    console.log(info);
-
     //update visibilities and diableds
 
     for (let id in options.basic) {
         let { dynamic } = options.basic[id],
             elem = document.getElementById('basic_' + id);
-
-        if (id === 'tocompress') {
-            console.log('yeah');
-        }
 
         if (dynamic.visibility !== null && ['boolean', 'function'].includes(typeof dynamic.visibility)) {
             let val = true;
@@ -171,9 +166,7 @@ function generateOptions(data) {
 
     const basic = options.basic;
 
-    console.log(basic);
     for (let id in basic) {
-        console.log(id);
         let type = basic[id].type;
 
         if (basic[id].parent !== null) 
@@ -198,52 +191,78 @@ function generateOptions(data) {
     updateValues();
 }
 
-//custom ffmpeg class
-class ffmpeg {
-    audio = false;
-    video = false;
-    commands = [];
+//custom fluentFFMPEG wrapper
+class ffmpegWrapper {
 
-    constructor(fname) {
-        this.fname = fnmame;
-    }
-    /*
-    fname = {
-        name: "abcd",
-        ext: "mp4"
-    }
-    */
-
-    newCommand() {
-        this.commands.push(fluentFFMPEG())//require('fluent-ffmpeg')('%in%').output('%out%'));
-        return this.commands.length - 1;
+    constructor(infile, outfile) {// path, path
+        this.audio = false;
+        this.video = false;
+        this.commands = [];
+        this.infile = infile;
+        this.fnames = [outfile];
+        
+        console.log('constructor')
+        this.commands.push(fluentFFMPEG(path.format(infile)).output(path.format(infile)));
+        console.log(this.commands, this.commands.length - 1)
     }
 
-    command(i, f) {
-        this.commands[i] = f(this.commands[i]);
+    getOutput() {
+        return this.fnames[this.fnames.length - 1];
     }
-    /*
-    .command(1, ffmpeg => ffmpeg.videoBitrate('500k'))
-    */
 
-    finish() {
+    newCommand(fname, ffmpeg) {// path, fluentFFMPEG
+        console.log('newcommand')
+        console.log(this.commmands, this.commands.length - 1)
+        if (ffmpeg)
+            this.commands[this.commands.length - 1] = ffmpeg;
+        console.log(this.commmands, this.commands.length - 1)
+        this.commands.push(fluentFFMPEG(path.format(getOutput())).output(path.format(fname)));
+        this.fnames.push(fname);
+    }
+
+    command(f, val) {// function(fluentFFMPEG, video info + commands, input value)
+        console.log('command')
+        console.log(this.commmands, this.commands.length - 1)
+        let info = genInfo();
+        info.newCommand = (fname, ffmpeg) => this.newCommand(fname, ffmpeg);
+        info.getOutput = () => this.getOutput();
+        console.log(this.commmands, this.commands.length - 1)
+        this.commands[this.commands.length - 1] = f(this.commands[this.commands.length - 1], info, val);
+        //f(commands[this.commands.length - 1], genInfo(), val)
+    }
+
+    finish() { //WHY IS this.commands UNDEFINED AAAAAHHHHHH
+
+        console.log(this.commands);
+
+        //let commands = this.commands;
+
         return new Promise((complete, fail) => {
 
+            let prepared = [];
+
+            const prepare = i => {
+                this.commands[i]._prepare(function (err, args) {
+                    if (err)
+                        fail(err);
+                    else {
+                        prepared[i] = args;
+                        if (prepared.filter(p=>p).length === this.commands.length)
+                            complete(prepared);
+                    }
+                });
+            }
+
             for (let i = 0; i < this.commands.length; i++) {
+                console.log(i, this.commands[i], this.commands)
                 if (this.commands[i]._currentOutput.video.get('bitrate').length === 0)
                     this.commands[i].videoCodec('copy');
                 if (this.commands[i]._currentOutput.audio.get('bitrate').length === 0)
                     this.commands[i].audioCodec('copy');
-                
+
+                prepare(i);
                 
             }
-
-            ret.command._prepare(function (err, args) {
-                if (err)
-                    fail(err);
-                else
-                    complete(args);
-            });
 
         });
     }
@@ -252,5 +271,58 @@ class ffmpeg {
 
 module.exports = {
     generate: data => generateOptions(data), //create html for options from rawEditorOptions.js
-    finish: () => {}
+    finish: videoSrc => {
+
+        var ffmpeg = new ffmpegWrapper(videoSrc, path.parse(videoSrc.name + '_edited' + videoSrc.ext));
+
+        for (let id in options.basic) {
+            let { dynamic } = options.basic[id],
+                elem = document.getElementById('basic_' + id),
+                val = null,
+                shouldrun = true;
+
+            switch (options.basic[id].type) {
+                case 'checkbox':
+                    val = elem.checked;
+                    break;
+                case 'dropdown':
+                    val = elem.value;
+            }
+
+            if (dynamic.visibility !== null && ['boolean', 'function'].includes(typeof dynamic.visibility)) {
+                let val = true;
+                if (typeof dynamic.visibility === 'function')
+                    val = dynamic.visibility(genInfo());
+                else
+                    val = dynamic.visibility;
+
+                shouldrun = shouldrun && val;
+            }
+
+            if (dynamic.enabled !== null && ['boolean', 'function'].includes(typeof dynamic.enabled)) {
+                let val = true;
+                if (typeof dynamic.enabled === 'function')
+                    val = dynamic.enabled(genInfo());
+                else
+                    val = dynamic.enabled;
+
+                shouldrun = shouldrun && val;
+            }
+
+            if (shouldrun && options.basic[id].run !== null)
+                ffmpeg.command(options.basic[id].run, val);
+
+        }
+
+        ffmpeg.finish().then(args => {
+
+            console.log(args);
+
+            //run ffmpeg
+
+        }).catch(e => {
+            throw e;
+        });
+
+    }
 };

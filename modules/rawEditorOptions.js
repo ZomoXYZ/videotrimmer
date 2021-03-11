@@ -42,12 +42,30 @@ module.exports = {
                 enabled: true
             },
             run: (ffmpeg, info) => {
+                
+                console.log(info.getOutput());
                 if (info.options.basic.compresssecondfile) {
-                    //do as second file
-                } else {
-                    //do as single file
+                    let fname = info.getOutput();
+                    fname.name = fname.name + '_compressed';
+                    fname.base = fname.name + fname.ext;
+                    ffmpeg = info.newCommand(fname, ffmpeg);
                 }
-                info.options.basic.compressType // compression type
+
+                switch (info.options.basic.compressType) {
+                    case 'auto':
+                        break;
+                    case 'discord':
+                        ffmpeg.videoBitrate('5000k');
+                        break;
+                    case 'large':
+                        break;
+                    case 'medium':
+                        break;
+                    case 'small':
+                        break;
+                }
+
+                return ffmpeg;
             }
         },
         compresssecondfile: {
@@ -75,7 +93,9 @@ module.exports = {
                 visibility: true,
                 enabled: info => info.options.basic.tocompress
             },
-            run: null
+            run: (ffmpeg, info, val) => {
+
+            }
         }
     },
     advance: {

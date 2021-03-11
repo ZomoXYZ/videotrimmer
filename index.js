@@ -76,7 +76,7 @@ addEventListener('load', () => {
     //declarations outside of page scope
     const videoEditor = require('./modules/editor.js')(document.querySelector('#editor video'), () => {
         blockFile = false;
-    });
+    }, throwError);
     
     /* general declarations by page
      * 
@@ -295,8 +295,8 @@ addEventListener('load', () => {
             else
                 input.parentElement.classList.remove('disabled');
         });
-        
-        videoEditor.src(file.path, data);
+
+        videoEditor.src(data);
         
     }
     
@@ -328,12 +328,15 @@ addEventListener('load', () => {
     //finish button
     document.querySelector('#finish .button').addEventListener('click', finishButton);
     function finishButton() {
-        videoEditor.close();
+        //videoEditor.close();
+        videoEditor.finish();
         
         document.body.classList.remove('editor');
         document.body.classList.add('editsprogress');
         
-        runffmpeg();
+        //runffmpeg();
+        
+
     }
     //Enter for finish button
     document.addEventListener('keydown', e => {
@@ -585,9 +588,12 @@ function jsonifyerror(msg) {
 }
 
 //general error catch
-addEventListener('error', (msg, url, line, col, error) => {
-    let fixedmsg = jsonifyerror(msg);
+function throwError(err) {
+    let fixedmsg = jsonifyerror(err);
     document.body.classList.add('error');
     document.querySelector('#errordisplay pre').textContent = JSON.stringify(fixedmsg, null, 2);
-    console.log(msg, fixedmsg);
+    console.log(err, fixedmsg);
+}
+addEventListener('error', (msg, url, line, col, error) => {
+    throwError(msg);
 });
