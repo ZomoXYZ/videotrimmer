@@ -300,36 +300,11 @@ addEventListener('load', () => {
         
     }
     
-    //checkbox exclusivity listeners
-    /*document.getElementById('fixmic').addEventListener('change', e => {
-        if (e.target.checked) {
-            document.getElementById('onlygame').checked = false;
-            document.getElementById('onlygame').setAttribute('disabled', '');
-        } else
-            document.getElementById('onlygame').removeAttribute('disabled');
-    });
-    document.getElementById('onlygame').addEventListener('change', e => {
-        if (e.target.checked) {
-            document.getElementById('fixmic').checked = false;
-            document.getElementById('fixmic').setAttribute('disabled', '');
-        } else
-            document.getElementById('fixmic').removeAttribute('disabled');
-    });
-    document.getElementById('tocompress').addEventListener('change', e => {
-        if (!e.target.checked) {
-            document.getElementById('compresssecondfile').checked = false;
-            document.getElementById('compresssecondfile').setAttribute('disabled', '');
-        } else
-            document.getElementById('compresssecondfile').removeAttribute('disabled');
-    });
-    document.getElementById('compresssecondfile').addEventListener('change', e => {
-    });*/
-    
     //finish button
     document.querySelector('#finish .button').addEventListener('click', finishButton);
     function finishButton() {
         //videoEditor.close();
-        videoEditor.finish();
+        videoEditor.finish(runffmpeg);
         
         document.body.classList.remove('editor');
         document.body.classList.add('editsprogress');
@@ -367,70 +342,70 @@ addEventListener('load', () => {
      */
     
     //recursive function to run commands
-    function runffmpegCommand(commands, iteration=0, promiseComplete, promiseError) {
+    function runffmpegCommand(commands, iteration = 0, promiseComplete, promiseError) {
+
+        //commands instanceof ffmpeg
         
         let run = (complete, error) => {
         
             //create the command
-            commands[iteration].finish().then(command => {
+            let command = commands[iteration]
                 
-                //run the command
-                let ffmpegShell = shell.spawn(ffmpegDir, command);
-                console.log(command);
+            //run the command
+            let ffmpegShell = shell.spawn(ffmpegDir, command);
+            console.log(command);
 
-                //basic data stored that shouldn't be recalculated everytime ffmpeg outputs data
-                let preOutput = document.querySelector('#consoleoutput pre'),
-                    frameCount = Math.floor(videoEditor.data().duration/(1/data.streams.primary.video.framerate));
+            //basic data stored that shouldn't be recalculated everytime ffmpeg outputs data
+            let preOutput = document.querySelector('#consoleoutput pre'),
+                frameCount = Math.floor(videoEditor.data().duration/(1/data.streams.primary.video.framerate));
 
-                //on ffmpeg data output
-                ffmpegShell.stderr.on('data', stdout => {
-                    
-                    //if it's already scrolled to the bottom then keep it scrolled to the bottom
-                    let toScroll = Math.abs(document.querySelector('#consoleoutput pre').scrollTop - (document.querySelector('#consoleoutput pre').scrollHeight - document.querySelector('#consoleoutput pre').getBoundingClientRect().height)) < 25;
-
-                    //output data so user can read it
-                    console.info(stdout.toString());
-                    preOutput.textContent+= '\n'+stdout;
-
-                    if (toScroll)
-                        preOutput.scrollTop = preOutput.scrollHeight;
-
-                    //calculate percent and display percent in progress bar
-                    if (stdout.toString().match(/frame= *(\d+) fps/g)) {
-                        let currentFrame = parseInt(stdout.toString().match(/frame= *(\d+) fps/)[1]),
-                            percent = Math.max(0, Math.min(100, currentFrame/frameCount));
-
-                        percent = mapNumber(percent, 0, 1, 100/commands.length*iteration, 100/commands.length*(iteration+1));
-
-                        document.querySelector('#progress .progressbar .progressinner').style.width = round(percent, .01)+'%';
-                    }
-
-                });
+            //on ffmpeg data output
+            ffmpegShell.stderr.on('data', stdout => {
                 
-                //cancel button
-                let cancelButton = () => {
-                    ffmpegShell.kill('SIGINT')
-                };
-                document.getElementById('returncancel').addEventListener('click', cancelButton);
+                //if it's already scrolled to the bottom then keep it scrolled to the bottom
+                let toScroll = Math.abs(document.querySelector('#consoleoutput pre').scrollTop - (document.querySelector('#consoleoutput pre').scrollHeight - document.querySelector('#consoleoutput pre').getBoundingClientRect().height)) < 25;
 
-                //on ffmpeg done
-                ffmpegShell.on('close', code => {
-                    console.log(`child process exited with code ${code}`);
-                    
-                    //disable cancel button
-                    document.getElementById('returncancel').removeEventListener('click', cancelButton);
-                    
-                    //recurse if there's another command, otherwise return
-                    if (commands.length-1 > iteration)
-                        runffmpegCommand(commands, iteration+1, complete, error);
-                    else
-                        complete();
-                });
+                //output data so user can read it
+                console.info(stdout.toString());
+                preOutput.textContent+= '\n'+stdout;
+
+                if (toScroll)
+                    preOutput.scrollTop = preOutput.scrollHeight;
+
+                //calculate percent and display percent in progress bar
+                if (stdout.toString().match(/frame= *(\d+) fps/g)) {
+                    let currentFrame = parseInt(stdout.toString().match(/frame= *(\d+) fps/)[1]),
+                        percent = Math.max(0, Math.min(100, currentFrame/frameCount));
+
+                    percent = mapNumber(percent, 0, 1, 100/commands.length*iteration, 100/commands.length*(iteration+1));
+
+                    document.querySelector('#progress .progressbar .progressinner').style.width = round(percent, .01)+'%';
+                }
+
+            });
+            
+            //cancel button
+            let cancelButton = () => {
+                ffmpegShell.kill('SIGINT')
+            };
+            document.getElementById('returncancel').addEventListener('click', cancelButton);
+
+            //on ffmpeg done
+            ffmpegShell.on('close', code => {
+                console.log(`child process exited with code ${code}`);
                 
-            }).catch(error);
+                //disable cancel button
+                document.getElementById('returncancel').removeEventListener('click', cancelButton);
+                
+                //recurse if there's another command, otherwise return
+                if (commands.length-1 > iteration)
+                    runffmpegCommand(commands, iteration+1, complete, error);
+                else
+                    complete();
+            });
             
         };
-        
+
         //if iteration > 0 then this function is already in a promise and shouldn't create a second
         if (iteration > 0)
             run(promiseComplete, promiseError);
@@ -438,112 +413,36 @@ addEventListener('load', () => {
             return new Promise((complete, error) => run(complete, error));
     }
     
-    function runffmpeg() {
+    function runffmpeg(commands) {
         
         blockFile = true;
-        
-        //array of commands
-        let commands = [],
-            commandTemplate = (input, output) => {
+
+        commands.finish((command, i) => {
+            if (i === 0) {
+
+                //set start/end positions
                 
-                //basic info
-                let ret = {
-                    input,
-                    output,
-                    audio: false,
-                    video: false,
-                    command: ffmpeg(input.name+input.ext).output(output.name+output.ext)
-                };
-                
-                //use acodec/vcodec copy if needed and prepare the command
-                ret.finish = () => {
-                    return new Promise((complete, fail) => {
-                        
-                        if (!ret.audio)
-                            ret.command.audioCodec('copy');
-                        if (!ret.video)
-                            ret.command.videoCodec('copy');
-                        ret.command._prepare(function(err, args) {
-                            if (err)
-                                fail(err);
-                            else
-                                complete(args);
-                        });
-                        
-                    });
-                };
-                
-                return ret;
-            };
-        
-        //set up main command
-        commands[0] = commandTemplate({
-            name: data.path.dir+'/'+data.path.name,
-            ext: data.path.ext
-        }, {
-            name: data.path.dir+'/'+data.path.name+'_edited',
-            ext: data.path.ext
-        });
-        
-        
-        if (!document.getElementById('fixmic').parentElement.classList.contains('disabled')
-            && document.getElementById('fixmic').checked) { //noise reduction on mic and combine channels
-            
-            commands[0].command.complexFilter([
-                {
-                    filter: 'afftdn', options: {nt:'w',om:'o',tr:''},
-                    inputs: '[0:a:1]', outputs: 'a'
-                },
-                {
-                    filter: 'agate', options: {threshold:'.035'},
-                    inputs: 'a', outputs: 'a'
-                },
-                {
-                    filter: 'amix', options: {inputs:'2'},
-                    inputs: ['[0:a:0]', 'a'], outputs: 'a'
-                }
-            ]).outputOptions('-map', '0:v:0', '-map', '[a]');
-            commands[0].audio = true;
-            
-        } else if (!document.getElementById('onlygame').parentElement.classList.contains('disabled')
-            && document.getElementById('onlygame').checked) //only use game audio
-            
-            commands[0].command.outputOptions('-map', '0:v:0', '-map', '0:a:0');
-        
-        
-        if (document.getElementById('tocompress').checked) {
-            
-            if (document.getElementById('compresssecondfile').checked) { //compress in second file
-                
-                commands[1] = commandTemplate(commands[0].output, {
-                    name: commands[0].output.name+'_compressed',
-                    ext: commands[0].output.ext
-                });
-                commands[1].command.videoBitrate('5000k');
-                
-                commands[1].video = commands[1].audio = true;
-                
-            } else { //compress in same file
-                commands[0].command.videoBitrate('5000k');
-                commands[0].video = true;
+                if (round.floor(videoEditor.data().trimStartPos, .01) !== 0)
+                    command.seekInput(videoEditor.data().trimStartPos);
+                if (round.ceil(videoEditor.data().trimEndPos, .01) !== round.ceil(data.duration, .01))
+                    command.inputOptions('-to ' + videoEditor.data().trimEndPos);
             }
-            
-        }
-        
-        //set start/end positions
-        if (round.floor(videoEditor.data().trimStartPos, .01) !== 0)
-            commands[0].command.seekInput(videoEditor.data().trimStartPos);
-        if (round.ceil(videoEditor.data().trimEndPos, .01) !== data.duration)
-            commands[0].command.inputOptions('-to '+videoEditor.data().trimEndPos);
-        
-        //run the commands
-        runffmpegCommand(commands).then(() => {
-            document.querySelector('#progress .progressbar .progressinner').style.width = null;
-            document.getElementById('editsprogress').classList.add('finished');
-            blockFile = false;
-        }).catch(err => {
-            console.error('error', err);
-            document.body.classList.remove('editsprogress');
+        }).then(args => {
+
+            console.log(args);
+
+            //run the commands
+            runffmpegCommand(args).then(() => {
+                document.querySelector('#progress .progressbar .progressinner').style.width = null;
+                document.getElementById('editsprogress').classList.add('finished');
+                blockFile = false;
+            }).catch(err => {
+                console.error('error', err);
+                document.body.classList.remove('editsprogress');
+            });
+
+        }).catch(e => {
+            throw e;
         });
         
         

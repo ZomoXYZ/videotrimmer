@@ -234,7 +234,7 @@ class ffmpegWrapper {
         
     }
 
-    finish() {
+    finish(prePrepare) {
 
         let cmds = this.commands,
             fname = this.fnames;
@@ -245,6 +245,10 @@ class ffmpegWrapper {
 
             const prepare = i => {
                 cmds[i].input(path.format(fname[i])).output(path.format(fname[i+1]));
+
+                if (typeof prePrepare === 'function')
+                    prePrepare(cmds[i], i);
+                
                 cmds[i]._prepare(function (err, args) {
                     if (err)
                         fail(err);
@@ -273,7 +277,7 @@ class ffmpegWrapper {
 
 module.exports = {
     generate: data => generateOptions(data), //create html for options from rawEditorOptions.js
-    finish: videoSrc => {
+    finish: (videoSrc, runFFMPEG) => {
 
         var ffmpeg = new ffmpegWrapper(videoSrc, path.parse(`${videoSrc.dir}/${videoSrc.name}_edited${videoSrc.ext}`));
 
@@ -316,15 +320,17 @@ module.exports = {
 
         }
 
-        ffmpeg.finish().then(args => {
+        runFFMPEG(ffmpeg);
+
+        /*ffmpeg.finish().then(args => {
 
             console.log(args);
 
-            //run ffmpeg
+            runFFMPEG(args);
 
         }).catch(e => {
             throw e;
-        });
+        });*/
 
     }
 };
