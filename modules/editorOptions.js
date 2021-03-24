@@ -168,6 +168,8 @@ function generateOptions(data) {
 
     const elem = document.getElementById('quickoptions');
 
+    elem.innerHTML = '';
+
     const basic = options.basic;
 
     for (let id in basic) {
@@ -216,9 +218,13 @@ class ffmpegWrapper {
     newCommand(fname, ffmpeg) {// path, fluentFFMPEG
         if (ffmpeg)
             this.commands[this.commands.length - 1] = ffmpeg;
+
+        let newffmpeg = fluentFFMPEG();
         
-        this.commands.push(fluentFFMPEG());
+        this.commands.push(newffmpeg);
         this.fnames.push(fname);
+
+        return newffmpeg;
     }
 
     command(f, val) {// function(fluentFFMPEG, video info + commands, input value)

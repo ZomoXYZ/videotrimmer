@@ -50,7 +50,8 @@ module.exports = {
                     ffmpeg = info.newCommand(fname, ffmpeg);
                 }
 
-                let bitrate = 0;
+                let bitrate = 0,
+                    constantbr = false;
 
                 const getAuto = maxbitrate => {
                     let size = Math.min(info.data.streams.primary.video.width, info.data.streams.primary.video.height);
@@ -88,7 +89,10 @@ module.exports = {
                             br = 55
                     }
 
-                    bitrate = Math.min(br*1e3, maxbitrate);
+                    bitrate = br*1e3;
+                    if (maxbitrate)
+                        bitrate = Math.min(bitrate, maxbitrate);
+                    bitrate = Math.min(bitrate, info.data.streams.primary.video.bitrate / 1000);
 
                 };
 
@@ -103,9 +107,18 @@ module.exports = {
                         else if (info.options.basic.discordtypenitro)
                             max = 100;
 
+
+                        //convert max MB to KB but with base 1024 instead of 1000
+                        max -= .15; //give it a buffer bc it keeps going over by about .12
+
+                        max *= 1048576; //1024*1024
+                        max /= 1e3;
+
                         let duration = parseFloat(info.data.streams.primary.video.duration);
 
-                        let maxbitrate = 8e6 * max / duration; //simplified https://blog.frame.io/2017/03/06/calculate-video-bitrates/
+                        let maxbitrate = Math.floor(8 * max / duration); //simplified https://blog.frame.io/2017/03/06/calculate-video-bitrates/
+
+                        constantbr = true;
 
                         getAuto(maxbitrate);
                         
@@ -124,8 +137,10 @@ module.exports = {
                         break;
                 }
 
+                console.log('bitrate (kbps): ', bitrate);
+
                 if (bitrate > 0)
-                    ffmpeg.videoBitrate(Math.floor(bitrate) + 'k');
+                    ffmpeg.videoBitrate(Math.floor(bitrate), constantbr);
 
                 return ffmpeg;
             }
