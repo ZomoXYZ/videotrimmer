@@ -8,6 +8,26 @@
 
 ## changelog
 
+### v1.0.0
+
+**changes**
+
+- improved editor options framework
+  - this improves maintainability and allows for more complex effects
+
+**additions**
+
+- ~~auto update~~ soon
+- more detailed compression
+  - auto and discord auto
+- ~~audio normalization~~ soon
+- ~~button to display keybinds~~ soon
+
+**fixes**
+
+- update checker would give false positives
+- progress bar wouldn't revert from circle
+
 ### v0.4.2
 
 **fixes**
