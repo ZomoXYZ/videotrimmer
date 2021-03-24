@@ -161,7 +161,7 @@ addEventListener('load', () => {
         videoEditor.open(document.querySelector('#editor video'));
         videoEditor.onload(editorScaleDo);
         
-        document.querySelector('#progress .progressbar').classList.remove('finished');
+        document.getElementById('editsprogress').classList.remove('finished');
 
         console.log(files);
         
