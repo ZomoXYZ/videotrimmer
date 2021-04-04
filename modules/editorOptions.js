@@ -84,13 +84,6 @@ function createDropdown(id, options) {
     let container = document.createElement('label');
 
     {
-        let label = document.createElement('span');
-        label.textContent = options.label;
-
-        container.appendChild(label);
-    }
-
-    {
         let select = document.createElement('select');
         select.setAttribute('id', 'basic_' + id);
 
@@ -108,6 +101,13 @@ function createDropdown(id, options) {
 
         container.appendChild(select)
 
+    }
+
+    {
+        let label = document.createElement('span');
+        label.textContent = options.label;
+
+        container.appendChild(label);
     }
 
     return container;

@@ -164,7 +164,7 @@ module.exports = {
                 ["large", "large"],
                 ["medium", "medium"],
                 ["small", "small"],
-                ["extrasmall", "extrasmall"]
+                ["extrasmall", "extra small"]
             ],
             value: "discord",
             label: "File size",
