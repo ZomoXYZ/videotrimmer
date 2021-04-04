@@ -33,6 +33,47 @@ module.exports = {
             },
             run: ffmpeg => ffmpeg.outputOptions('-map', '0:v:0', '-map', '0:a:0')
         },
+        normalize: {
+            parent: null,
+            type: "checkbox",
+            label: "Normalize Audio",
+            dynamic: {
+                visibility: info => info.data.streams.audio.length >= 1,
+                enabled: true
+            },
+            run: (ffmpeg, info) => {
+                /*info.getData(ffmpegData => {
+                    return ffmpegData.
+                })*/
+
+                let ffmpegData = info.rawffmpeg(['-i', info.getInputPath(), '-af', 'volumedetect', '-vn', '-sn', '-dn', '-f', 'null', '/dev/null']);
+
+                let shellout = ffmpegData.stderr.toString().split('\n');
+                shellout = shellout.filter(l => l.startsWith('[Parsed_volumedetect'));
+
+                let audioInfo = {};
+
+                shellout.forEach(l => {
+                    let lineinfo = l.match(/\[.*?\] (.*$)/)[1].split(/:\s*/);
+                    audioInfo[lineinfo[0]] = lineinfo[1];
+                });
+
+                if ('max_volume' in audioInfo) {
+                    let maxVolume = parseFloat(audioInfo['max_volume']),
+                        volumeChange = -0.1 - maxVolume; // -0.1 offset so max isn't at 0dB exactly
+
+                    console.log(`Normalizing Audio (${volumeChange}dB)`)
+                    
+                    if (volumeChange === 0)
+                        return ffmpeg;
+                    
+                    return ffmpeg.audioFilters(`volume=${volumeChange}dB`);
+                    
+                }
+
+                return ffmpeg;
+            }
+        },
         tocompress: {
             parent: null,
             type: "checkbox",

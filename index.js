@@ -304,7 +304,7 @@ addEventListener('load', () => {
     document.querySelector('#finish .button').addEventListener('click', finishButton);
     function finishButton() {
         //videoEditor.close();
-        videoEditor.finish(runffmpeg);
+        videoEditor.finish(runffmpeg, [ffDir, ffmpegDir, ffprobeDir]);
         
         document.body.classList.remove('editor');
         document.body.classList.add('editsprogress');

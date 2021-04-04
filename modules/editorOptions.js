@@ -1,6 +1,6 @@
 const fluentFFMPEG = require('fluent-ffmpeg'),
     options = require('./rawEditorOptions.js'),
-    EventEmitter = require('events');
+    shell = require('child_process').spawnSync;
 
 var videoData = null;
 
@@ -202,10 +202,11 @@ function generateOptions(data) {
 //custom fluentFFMPEG wrapper
 class ffmpegWrapper {
 
-    constructor(infile, outfile) {// path, path
+    constructor(infile, outfile, ffDirs) {// path, path, [ffDir, ffmpegDir, ffprobeDir]
         this.audio = false;
         this.video = false;
         this.commands = [];
+        this.ffDirs = ffDirs;
         this.fnames = [infile, outfile];
         
         this.commands.push(fluentFFMPEG());
@@ -213,6 +214,10 @@ class ffmpegWrapper {
 
     getOutput() {
         return Object.assign({}, this.fnames[this.fnames.length - 1]);
+    }
+
+    getInput() {
+        return Object.assign({}, this.fnames[this.fnames.length - 2]);
     }
 
     newCommand(fname, ffmpeg) {// path, fluentFFMPEG
@@ -227,11 +232,24 @@ class ffmpegWrapper {
         return newffmpeg;
     }
 
-    command(f, val) {// function(fluentFFMPEG, video info + commands, input value)
+    rawffmpeg(args) {// array
+        return shell(this.ffDirs[1], args);
+    }
+
+    rawffprobe(args) {// array
+        return shell(this.ffDirs[2], args);
+    }
+
+    command(f, val) {// function(fluentFFMPEG, video info + commands, input value), input value
 
         let info = genInfo();
         info.newCommand = (fname, ffmpeg) => this.newCommand(fname, ffmpeg);
         info.getOutput = () => this.getOutput();
+        info.getInput = () => this.getInput();
+        info.getOutputPath = () => path.format(this.getOutput());
+        info.getInputPath = () => path.format(this.getInput());
+        info.rawffmpeg = args => this.rawffmpeg(args);
+        info.rawffprobe = args => this.rawffprobe(args);
         
         let ran = f(this.commands[this.commands.length - 1], info, val);
 
@@ -267,9 +285,9 @@ class ffmpegWrapper {
             }
 
             for (let i = 0; i < cmds.length; i++) {
-                if (cmds[i]._currentOutput.video.get('bitrate').length === 0)
+                if (cmds[i]._currentOutput.video.get('bitrate').length === 0 && cmds[i]._currentOutput.videoFilters.get().length === 0)
                     cmds[i].videoCodec('copy');
-                if (cmds[i]._currentOutput.audio.get('bitrate').length === 0)
+                if (cmds[i]._currentOutput.audio.get('bitrate').length === 0 && cmds[i]._currentOutput.audioFilters.get().length === 0)
                     cmds[i].audioCodec('copy');
 
                 prepare(i);
@@ -283,9 +301,9 @@ class ffmpegWrapper {
 
 module.exports = {
     generate: data => generateOptions(data), //create html for options from rawEditorOptions.js
-    finish: (videoSrc, runFFMPEG) => {
+    finish: (videoSrc, runFFMPEG, ffDirs) => {
 
-        var ffmpeg = new ffmpegWrapper(videoSrc, path.parse(`${videoSrc.dir}/${videoSrc.name}_edited${videoSrc.ext}`));
+        var ffmpeg = new ffmpegWrapper(videoSrc, path.parse(`${videoSrc.dir}/${videoSrc.name}_edited${videoSrc.ext}`), ffDirs);
 
         for (let id in options.basic) {
             let { dynamic } = options.basic[id],
