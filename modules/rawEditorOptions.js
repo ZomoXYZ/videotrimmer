@@ -67,7 +67,7 @@ module.exports = {
                     if (volumeChange === 0)
                         return ffmpeg;
                     
-                    return ffmpeg.audioFilters(`volume=${volumeChange}dB`);
+                    return ffmpeg.audioFilters(`volume=${volumeChange}dB`);;
                     
                 }
 
@@ -83,13 +83,6 @@ module.exports = {
                 enabled: true
             },
             run: (ffmpeg, info) => {
-
-                if (info.options.basic.compresssecondfile) {
-                    let fname = info.getOutput();
-                    fname.name = fname.name + '_compressed';
-                    fname.base = fname.name + fname.ext;
-                    ffmpeg = info.newCommand(fname, ffmpeg);
-                }
 
                 let bitrate = 0,
                     constantbr = false;
@@ -183,6 +176,11 @@ module.exports = {
                 if (bitrate > 0)
                     ffmpeg.videoBitrate(Math.floor(bitrate), constantbr);
 
+                if (info.options.basic.compresssecondfile) {
+                    let fname = info.getOutput('_compressed');
+                    //ffmpeg = info.newCommand(fname, ffmpeg);
+                    return [ffmpeg, fname];
+                }
                 return ffmpeg;
             }
         },
