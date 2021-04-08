@@ -618,11 +618,12 @@ body > div {
 }
 
 #editsprogress #progress {
-  width: 100%;
+  width: 75%;
   height: 20%;
   display: flex;
   justify-content: center;
   align-items: center;
+  flex-direction: column;
   /* https://codepen.io/traf/pen/oKbaqQ */
 }
 #editsprogress #progress .progressbar {
@@ -634,7 +635,7 @@ body > div {
   padding: 0 5px;
   display: flex;
   height: 40px;
-  width: 75%;
+  width: 100%;
   transition: width 250ms ease-out, height 250ms ease-out;
 }
 #editsprogress #progress .progressbar .progressinner {
@@ -645,6 +646,22 @@ body > div {
   height: 30px;
   width: 0%;
   transition: width 250ms ease-in-out, height 250ms ease-out;
+}
+#editsprogress #progress .progresstext {
+  width: 100%;
+}
+#editsprogress #progress .progresstext > span {
+  display: inline-block;
+  font-size: 16px;
+}
+#editsprogress #progress .progresstext > span.part {
+  float: left;
+}
+#editsprogress #progress .progresstext > span.eta {
+  float: right;
+}
+#editsprogress #progress .progresstext > span.eta::after {
+  content: " secs remaining";
 }
 #editsprogress #return {
   height: 15%;
@@ -662,6 +679,9 @@ body > div {
 #editsprogress.finished #progress .progressbar .progressinner {
   width: 100%;
   height: 50px;
+}
+#editsprogress.finished #progress .progresstext {
+  display: none;
 }
 #editsprogress.finished #return #returncancel {
   display: none;

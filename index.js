@@ -343,10 +343,13 @@ addEventListener('load', () => {
      */
 
     //this has no error handling (must be done by parsing output)
-    function runffmpegEachCommand(command, startpercent, endpercent) {
+    function runffmpegEachCommand(command, startpercent, endpercent, part, totalpart) {
 
-        if (startpercent === 0)
+        document.querySelector('#progress .progresstext .part').textContent = `${part}/${totalpart}`;
+        if (startpercent === 0) {
             document.querySelector('#progress .progressbar .progressinner').style.width = '30px';
+            document.querySelector('#progress .progresstext .eta').textContent = 'calculating';
+        }
 
         //command is array of args
 
@@ -358,7 +361,11 @@ addEventListener('load', () => {
 
             //basic data stored that shouldn't be recalculated everytime ffmpeg outputs data
             let preOutput = document.querySelector('#consoleoutput pre'),
-                frameCount = Math.floor(videoEditor.data().duration / (1 / data.streams.primary.video.framerate));
+                frameCount = Math.floor(videoEditor.data().duration / (1 / data.streams.primary.video.framerate)),
+                timeAvgs = [],
+                lastTime = null,
+                lastFrame = 0;
+
 
             //on ffmpeg data output
             ffmpegShell.stderr.on('data', stdout => {
@@ -378,17 +385,41 @@ addEventListener('load', () => {
                 //calculate percent and display percent in progress bar
                 if (stdout.match(/frame= *(\d+) fps/g)) {
                     let currentFrame = parseInt(stdout.match(/frame= *(\d+) fps/)[1]),
-                        percent = Math.max(0, Math.min(1, currentFrame / frameCount));
+                        percent = Math.max(0, Math.min(1, currentFrame / frameCount)),
+                        vidualpercent = mapNumber(percent, 0, 1, startpercent, endpercent),
+                        timeRemaining = 'calculating';
 
-                    percent = mapNumber(percent, 0, 1, startpercent, endpercent);
+                    if (lastTime === null) {
+                        lastTime = new Date();
+                        lastFrame = currentFrame;
+                    } else {
+                        timeAvgs.push((new Date() - lastTime)/(currentFrame - lastFrame));
+
+                        while (timeAvgs.length > 20)
+                            timeAvgs.shift();
+                        
+                        //calculate average time (in miliseconds) per frame over the last 0-20 stdout events 
+                        let avgPerFrame = 0;
+                        for (let t of timeAvgs)
+                            avgPerFrame += t;
+                        avgPerFrame /= timeAvgs.length;
+
+                        if (avgPerFrame > 0) // if it's less than 0 then idk, it just said -Infinity for some reason
+                            timeRemaining = Math.round(avgPerFrame * (frameCount - currentFrame) / 1000);
+                        
+                    }
 
                     //needs minimum 30px
                     //30px is ?%
                     let minpercent = (document.querySelector('#progress .progressbar').getBoundingClientRect().width - 10) / 30 / 100;
 
-                    percent = mapNumber(percent, 0, 1, minpercent, 1);
+                    vidualpercent = mapNumber(vidualpercent, 0, 1, minpercent, 1);
 
-                    document.querySelector('#progress .progressbar .progressinner').style.width = round(percent * 100, .01) + '%';
+                    document.querySelector('#progress .progressbar .progressinner').style.width = round(vidualpercent * 100, .01) + '%';
+
+                    document.querySelector('#progress .progresstext .part').textContent = `${part}/${totalpart}`;
+                    document.querySelector('#progress .progresstext .eta').textContent = timeRemaining;
+
                 }
 
             });
@@ -427,7 +458,7 @@ addEventListener('load', () => {
         function eachCommand(args) {
             return new Promise((complete, error) => {
 
-                runffmpegEachCommand(args, eachPercent * current, eachPercent * (current + 1)).then(() => {
+                runffmpegEachCommand(args, eachPercent * current, eachPercent * (current + 1), current + 1, total).then(() => {
                     complete();
                 }).catch(err => {
                     //console.error('error', err);
