@@ -1,3 +1,11 @@
+# videotrimmer v1.0.0 beta
+
+## current issues being worked on
+
+- progress bar will jump back to 0% every time a new command starts
+- last command run doesn't save back to main folder
+- file size was just 9.44 octal megabytes when compressed for discord, more research is needed
+
 # videotrimmer
 
 [trello todo list](https://trello.com/b/B28JSPwF/videotrimmer-features)
