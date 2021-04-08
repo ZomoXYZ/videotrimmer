@@ -3,7 +3,6 @@
 ## current features/issues being worked on
 
 - add settings button to first screen
-- add part num and eta to progress bar
 
 # videotrimmer
 
