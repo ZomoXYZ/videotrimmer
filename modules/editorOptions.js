@@ -209,7 +209,7 @@ class ffmpegWrapper {
         this.video = false;
         this.commands = [];
         this.ffDirs = ffDirs;
-        this.fnames = [infile, null];
+        this.temps = [];
     }
 
     genTemp(ext) {
@@ -235,27 +235,21 @@ class ffmpegWrapper {
 
         let tempfname = genFname();
 
-        return path.parse(path.join(tempdir, tempfname+ext));
+        let ret = path.parse(path.join(tempdir, tempfname + ext));
+
+        ret.isTemp = true;
+
+        this.temps.push(ret);
+
+        return ret;
     }
 
-    getOutput(fnameSuffix='_edited', pos=this.fnames.length-1) {//string
-        let output = null;
-        for (let i = pos; i >= 0 && output === null; i--) {
-            if (this.fnames[i] && i !== this.fnames.length - 1) {
-                output = Object.assign({}, this.fnames[i]);
-                output.name += fnameSuffix;
-                output.base = output.name + output.ext;
-            }
+    clearTemp() {
+        for (let i = 0; i < this.temps.length; i++) {
+            let p = path.format(this.temps[i])
+            if (fs.existsSync(p))
+                fs.unlinkSync(p);
         }
-        return output;
-        //return Object.assign({}, this.fnames[this.fnames.length - 1]);
-    }
-
-    getInput() {
-        let input = null;
-        for (let i = this.fnames.length - 2; i >= 0 && input === null; i--)
-            input = this.fnames[i];
-        return Object.assign({}, input);
     }
 
     newCommand(fname, ffmpeg) {// path, fluentFFMPEG
@@ -377,6 +371,77 @@ class ffmpegWrapper {
         });
     }
 
+    fullcommand(f, val, isfirst, islast, infname, prePrepare, referencePath) {// function(fluentFFMPEG, video info + commands, input value), input value
+
+        return new Promise((complete, fail) => {
+
+            //console.log('input', this.getInput(), 'output', this.getOutput(), this.fnames);
+
+            let outfname = null;
+
+            let info = genInfo();
+            //info.newCommand = (fname, ffmpeg) => this.newCommand(fname, ffmpeg);
+            /*info.getOutput = fnameSuffix => this.getOutput(fnameSuffix);
+            info.getOutputPath = fnameSuffix => path.format(this.getOutput(fnameSuffix));*/
+            info.getInput = () => Object.assign({}, infname);
+            info.getInputPath = () => path.format(info.getInput());
+            info.rawffmpeg = args => this.rawffmpeg(args);
+            info.rawffprobe = args => this.rawffprobe(args);
+            info.asNewFile = outSuffix => {
+                let outfname = Object.assign({}, referencePath);
+                outfname.name += outSuffix;
+                outfname.base = outfname.name + outfname.ext;
+                return outfname;
+            }; //outfname will be path.parse object
+
+            let cmd = f(fluentFFMPEG(), info, val);
+
+            //might deprecate in favor of info.asNewFile(outSuffix)
+            if (cmd instanceof [].constructor)
+                [cmd, outfname] = cmd;
+
+            if (cmd instanceof fluentFFMPEG().constructor) {
+
+                if (outfname === null) {
+                    if (islast) {
+                        outfname = Object.assign({}, referencePath);
+
+                        outfname.name+= '_edited';
+                        outfname.base = outfname.name + outfname.ext;
+                    } else
+                        outfname = this.genTemp(infname.ext);
+                }
+
+                if (cmd._complexFilters.get().length === 0) {
+                    if (cmd._currentOutput.video.get('bitrate').length === 0 && cmd._currentOutput.videoFilters.get().length === 0)
+                        cmd.videoCodec('copy');
+                    if (cmd._currentOutput.audio.get('bitrate').length === 0 && cmd._currentOutput.audioFilters.get().length === 0)
+                        cmd.audioCodec('copy');
+                }
+
+                console.log('in', infname, path.format(infname));
+                console.log('out', outfname, path.format(outfname));
+
+                cmd.input(path.format(infname)).output(path.format(outfname));
+
+                if (typeof prePrepare === 'function')
+                    prePrepare(cmd, isfirst, islast);
+
+                cmd._prepare(function (err, args) {
+                    if (err)
+                        fail(err);
+                    else {
+                        console.log(args);
+                        complete([args, outfname]);
+                    }
+                });
+
+            }
+
+        });
+
+    }
+
 }
 
 module.exports = {
@@ -384,9 +449,81 @@ module.exports = {
     finish: (videoSrc, runFFMPEG, ffDirs) => {
 
         //var ffmpeg = new ffmpegWrapper(videoSrc, path.parse(`${videoSrc.dir}/${videoSrc.name}_edited${videoSrc.ext}`), ffDirs);
-        var ffmpeg = new ffmpegWrapper(videoSrc, ffDirs);
+        var ffmpeg = new ffmpegWrapper(videoSrc, ffDirs),
+            allRunFuncs = [];
 
         for (let id in options.basic) {
+            let { dynamic } = options.basic[id],
+                elem = document.getElementById('basic_' + id),
+                val = null,
+                shouldrun = true;
+
+            switch (options.basic[id].type) {
+                case 'checkbox':
+                    val = elem.checked;
+                    break;
+                case 'dropdown':
+                    val = elem.value;
+            }
+
+            if (dynamic.visibility !== null && ['boolean', 'function'].includes(typeof dynamic.visibility)) {
+                let curval = true;
+                if (typeof dynamic.visibility === 'function')
+                    curval = dynamic.visibility(genInfo());
+                else
+                    curval = dynamic.visibility;
+
+                shouldrun = shouldrun && curval;
+            }
+
+            if (dynamic.enabled !== null && ['boolean', 'function'].includes(typeof dynamic.enabled)) {
+                let curval = true;
+                if (typeof dynamic.enabled === 'function')
+                    curval = dynamic.enabled(genInfo());
+                else
+                    curval = dynamic.enabled;
+
+                shouldrun = shouldrun && curval;
+            }
+
+            if (shouldrun && options.basic[id].run !== null)
+                allRunFuncs.push([options.basic[id].run, val]);
+
+        }
+
+        runFFMPEG = runFFMPEG(allRunFuncs.length);
+
+        let lastNontempPath = null;
+
+        const eachOption = (i, infname) => {
+            if (i < allRunFuncs.length && typeof allRunFuncs[i] === 'object') {
+
+                console.log('infname', infname);
+
+                if (lastNontempPath === null || (infname && !infname.isTemp))
+                    lastNontempPath = infname;
+
+                let args = [i === 0, i === allRunFuncs.length - 1, infname, runFFMPEG.prePrepare, lastNontempPath];
+
+                ffmpeg.fullcommand(...allRunFuncs[i], ...args).then(([args, outfname]) => {
+                    runFFMPEG(args).then(cancelled => {
+                        if (!cancelled)
+                            eachOption(i + 1, outfname);
+                        else
+                            runFFMPEG.finish();
+                    }).catch(err => {
+                        throw err;
+                    });
+                }).catch(err => {
+                    throw err;
+                });
+            } else
+                runFFMPEG.finish();
+        };
+
+        eachOption(0, videoSrc);
+
+        /*for (let id in options.basic) {
             let { dynamic } = options.basic[id],
                 elem = document.getElementById('basic_' + id),
                 val = null,
@@ -422,10 +559,11 @@ module.exports = {
 
             if (shouldrun && options.basic[id].run !== null)
                 ffmpeg.command(options.basic[id].run, val);
+                //fullcommand(f, val, runffmpeg, infname, islast)
 
         }
 
-        runFFMPEG(ffmpeg);
+        runFFMPEG(ffmpeg);*/
 
         /*ffmpeg.finish().then(args => {
 

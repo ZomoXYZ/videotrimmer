@@ -304,7 +304,7 @@ addEventListener('load', () => {
     document.querySelector('#finish .button').addEventListener('click', finishButton);
     function finishButton() {
         //videoEditor.close();
-        videoEditor.finish(runffmpeg, [ffDir, ffmpegDir, ffprobeDir]);
+        videoEditor.finish(runffmpegEach, [ffDir, ffmpegDir, ffprobeDir]);
         
         document.body.classList.remove('editor');
         document.body.classList.add('editsprogress');
@@ -333,6 +333,7 @@ addEventListener('load', () => {
             document.getElementById('editor').style.transform = `scale(1, 1)`;
     };
     addEventListener('resize', editorScaleDo);
+    addEventListener('click', () => setTimeout(editorScaleDo, 10));
     
     /* loading edits */
     
@@ -344,7 +345,7 @@ addEventListener('load', () => {
     //recursive function to run commands
     function runffmpegCommand(commands, iteration = 0, promiseComplete, promiseError) {
 
-        //commands instanceof ffmpeg
+        //commands is array of args
         
         let run = (complete, error) => {
         
@@ -412,6 +413,83 @@ addEventListener('load', () => {
         else
             return new Promise((complete, error) => run(complete, error));
     }
+
+    //this has no error handling (must be done by parsing output)
+    function runffmpegEachCommand(command, startpercent, endpercent) {
+
+        document.querySelector('#progress .progressbar .progressinner').style.width = '30px';
+
+        //command is array of args
+
+        let run = (complete, error) => {
+
+            //run the command
+            let ffmpegShell = shell.spawn(ffmpegDir, command);
+            console.log(command);
+
+            //basic data stored that shouldn't be recalculated everytime ffmpeg outputs data
+            let preOutput = document.querySelector('#consoleoutput pre'),
+                frameCount = Math.floor(videoEditor.data().duration / (1 / data.streams.primary.video.framerate));
+
+            //on ffmpeg data output
+            ffmpegShell.stderr.on('data', stdout => {
+
+                stdout = stdout.toString();
+
+                //if it's already scrolled to the bottom then keep it scrolled to the bottom
+                let toScroll = Math.abs(document.querySelector('#consoleoutput pre').scrollTop - (document.querySelector('#consoleoutput pre').scrollHeight - document.querySelector('#consoleoutput pre').getBoundingClientRect().height)) < 25;
+
+                //output data so user can read it
+                console.info(stdout);
+                preOutput.textContent += '\n' + stdout;
+
+                if (toScroll)
+                    preOutput.scrollTop = preOutput.scrollHeight;
+
+                //calculate percent and display percent in progress bar
+                if (stdout.match(/frame= *(\d+) fps/g)) {
+                    let currentFrame = parseInt(stdout.match(/frame= *(\d+) fps/)[1]),
+                        percent = Math.max(0, Math.min(1, currentFrame / frameCount));
+                    console.log(currentFrame, frameCount, percent, startpercent, endpercent);
+
+                    percent = mapNumber(percent, 0, 1, startpercent, endpercent);
+
+                    //needs minimum 30px
+                    //30px is ?%
+                    let minpercent = (document.querySelector('#progress .progressbar').getBoundingClientRect().width - 10) / 30 / 100;
+
+                    percent = mapNumber(percent, 0, 1, minpercent, 1);
+
+                    console.log(percent);
+
+                    document.querySelector('#progress .progressbar .progressinner').style.width = round(percent * 100, .01) + '%';
+                }
+
+            });
+
+            //cancel button
+            let cancelled = false;
+            let cancelButton = () => {
+                ffmpegShell.kill('SIGINT');
+                cancelled = true;
+            };
+            document.getElementById('returncancel').addEventListener('click', cancelButton);
+
+            //on ffmpeg done
+            ffmpegShell.on('close', code => {
+                console.log(`child process exited with code ${code}`);
+
+                //disable cancel button
+                document.getElementById('returncancel').removeEventListener('click', cancelButton);
+
+                //recurse if there's another command, otherwise return
+                complete(cancelled);
+            });
+
+        };
+
+        return new Promise((complete, error) => run(complete, error));
+    }
     
     function runffmpeg(commands) {
         
@@ -431,6 +509,8 @@ addEventListener('load', () => {
 
             console.log(args);
 
+            commands.clearTemp();
+
             //run the commands
             runffmpegCommand(args).then(() => {
                 document.querySelector('#progress .progressbar .progressinner').style.width = null;
@@ -444,6 +524,61 @@ addEventListener('load', () => {
         }).catch(e => {
             throw e;
         });
+        
+        
+    }
+
+    /*
+    runffmpegEach() = (args).then(() => {
+                            eachOption(i + 1, outfname);
+                        }).catch(err => {
+                            throw err;
+                        });
+                         */
+    
+    function runffmpegEach(total) {
+        
+        blockFile = true;
+
+        let current = 0,
+            eachPercent = 1/total;
+
+        function eachCommand(args) {
+            return new Promise((complete, error) => {
+
+                runffmpegEachCommand(args, eachPercent * current, eachPercent * (current + 1)).then(() => {
+                    complete();
+                }).catch(err => {
+                    //console.error('error', err);
+                    document.body.classList.remove('editsprogress');
+                    error(err);
+                });
+
+                current++;
+
+            });
+        }
+
+        eachCommand.finish = () => {
+            document.querySelector('#progress .progressbar .progressinner').style.width = null;
+            document.getElementById('editsprogress').classList.add('finished');
+            blockFile = false;
+        };
+
+        //prePrepare(cmd, isfirst, islast);
+        eachCommand.prePrepare = (command, isfirst, islast) => {
+            if (isfirst) {
+
+                //set start/end positions
+
+                if (round.floor(videoEditor.data().trimStartPos, .01) !== 0)
+                    command.seekInput(videoEditor.data().trimStartPos);
+                if (round.ceil(videoEditor.data().trimEndPos, .01) !== round.ceil(data.duration, .01))
+                    command.inputOptions('-to ' + videoEditor.data().trimEndPos);
+            }
+        };
+
+        return eachCommand;
         
         
     }

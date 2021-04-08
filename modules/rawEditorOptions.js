@@ -21,7 +21,7 @@ module.exports = {
                             filter: 'amix', options: { inputs: '2' },
                             inputs: ['[0:a:0]', 'a'], outputs: 'a'
                         }
-                    ]).outputOptions('-map', '0:v:0', '-map', '[a]')
+                    ]).outputOptions('-map', '0:v:0', '-map', '[a]').videoCodec('copy')
         },
         onlygame: {
             parent: null,
@@ -42,9 +42,6 @@ module.exports = {
                 enabled: true
             },
             run: (ffmpeg, info) => {
-                /*info.getData(ffmpegData => {
-                    return ffmpegData.
-                })*/
 
                 let ffmpegData = info.rawffmpeg(['-i', info.getInputPath(), '-af', 'volumedetect', '-vn', '-sn', '-dn', '-f', 'null', '/dev/null']);
 
@@ -177,9 +174,8 @@ module.exports = {
                     ffmpeg.videoBitrate(Math.floor(bitrate), constantbr);
 
                 if (info.options.basic.compresssecondfile) {
-                    let fname = info.getOutput('_compressed');
-                    //ffmpeg = info.newCommand(fname, ffmpeg);
-                    return [ffmpeg, fname];
+                    let fname = info.asNewFile('_compressed');
+                    return ffmpeg;
                 }
                 return ffmpeg;
             }
