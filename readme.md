@@ -2,8 +2,8 @@
 
 ## current features/issues being worked on
 
-- on cancel, delete temps and final if there
-- on finish, delete temps
+- add settings button to first screen
+- add part num and eta to progress bar
 
 # videotrimmer
 
@@ -21,13 +21,14 @@
 
 - improved editor options framework
   - this improves maintainability and allows for more complex effects
+- progress bar shows more detailed information
 
 **additions**
 
 - ~~auto update~~ soon
 - more detailed compression
   - auto and discord auto
-- ~~audio normalization~~ soon
+- audio normalization
 - ~~button to display keybinds~~ soon
 
 **fixes**
