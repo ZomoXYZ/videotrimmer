@@ -4,12 +4,14 @@ const fluentFFMPEG = require('fluent-ffmpeg'),
     shell = require('child_process').spawnSync,
     options = require('./rawEditorOptions.js');
 
-var videoData = null;
+var videoData = null,
+    trimmedDuration = null; // will stay null until finish() is called form editor.js
 
 function genInfo() {
 
     let ret = {
         data: videoData,
+        duration: trimmedDuration,
         options: {
             basic: {},
             advanced: {}
@@ -269,108 +271,6 @@ class ffmpegWrapper {
         return shell(this.ffDirs[2], args);
     }
 
-    command(f, val) {// function(fluentFFMPEG, video info + commands, input value), input value
-
-        //console.log('input', this.getInput(), 'output', this.getOutput(), this.fnames);
-
-        let info = genInfo();
-        info.newCommand = (fname, ffmpeg) => this.newCommand(fname, ffmpeg);
-        info.getOutput = fnameSuffix => this.getOutput(fnameSuffix);
-        info.getOutputPath = fnameSuffix => path.format(this.getOutput(fnameSuffix));
-        info.getInput = () => this.getInput();
-        info.getInputPath = () => path.format(this.getInput());
-        info.rawffmpeg = args => this.rawffmpeg(args);
-        info.rawffprobe = args => this.rawffprobe(args);
-        
-        /*let ran = f(this.commands[this.commands.length - 1], info, val);
-
-        if (ran instanceof fluentFFMPEG().constructor)
-            this.commands[this.commands.length - 1] = ran;*/
-
-        let ran = f(fluentFFMPEG(), info, val),
-            fname = null;
-        
-        if (ran instanceof [].constructor)
-            [ran, fname] = ran;
-        
-        if (ran instanceof fluentFFMPEG().constructor) {
-            this.commands.push(ran);
-            this.fnames.push(fname);
-        }
-        
-    }
-
-    finish(prePrepare) {
-
-        let cmds = this.commands,
-            fnames = [],
-            curExt = this.fnames[0].ext;
-
-        let lastOutput = this.fnames[0];
-        for (let i = 0; i < cmds.length; i++) {
-            let outName = this.fnames[i + 1];
-            //in lastOutput
-            //out outName
-
-            console.log('pre', [lastOutput, outName])
-
-            if (outName === null) {
-                if (i === cmds.length - 1) {
-                    outName = this.getOutput('_edited', i);
-
-                } else
-                    outName = this.genTemp(curExt);
-            } else
-                curExt = outName.ext;
-
-            console.log('post', [lastOutput, outName])
-            
-            fnames.push([path.format(lastOutput), path.format(outName)]);
-
-            lastOutput = outName;
-
-        }
-
-        console.log(fnames);
-
-        return new Promise((complete, fail) => {
-
-            let prepared = [];
-
-            const prepare = i => {
-                cmds[i].input(fnames[i][0]).output(fnames[i][1]);
-
-                if (typeof prePrepare === 'function')
-                    prePrepare(cmds[i], i);
-                
-                cmds[i]._prepare(function (err, args) {
-                    if (err)
-                        fail(err);
-                    else {
-                        prepared[i] = args;
-                        if (prepared.filter(p=>p).length === cmds.length) {
-                            console.log(cmds);
-                            complete(prepared);
-                        }
-                    }
-                });
-            }
-
-            for (let i = 0; i < cmds.length; i++) {
-                if (cmds[i]._complexFilters.get().length === 0) {
-                    if (cmds[i]._currentOutput.video.get('bitrate').length === 0 && cmds[i]._currentOutput.videoFilters.get().length === 0)
-                        cmds[i].videoCodec('copy');
-                    if (cmds[i]._currentOutput.audio.get('bitrate').length === 0 && cmds[i]._currentOutput.audioFilters.get().length === 0)
-                        cmds[i].audioCodec('copy');
-                }
-
-                prepare(i);
-                
-            }
-
-        });
-    }
-
     fullcommand(f, val, isfirst, islast, infname, prePrepare, referencePath) {// function(fluentFFMPEG, video info + commands, input value), input value
 
         return new Promise((complete, fail) => {
@@ -446,7 +346,8 @@ class ffmpegWrapper {
 
 module.exports = {
     generate: data => generateOptions(data), //create html for options from rawEditorOptions.js
-    finish: (videoSrc, runFFMPEG, ffDirs) => {
+    finish: (videoSrc, runFFMPEG, ffDirs, trimmedDur) => {
+        trimmedDuration = trimmedDur;
 
         //var ffmpeg = new ffmpegWrapper(videoSrc, path.parse(`${videoSrc.dir}/${videoSrc.name}_edited${videoSrc.ext}`), ffDirs);
         var ffmpeg = new ffmpegWrapper(videoSrc, ffDirs),
@@ -522,58 +423,6 @@ module.exports = {
         };
 
         eachOption(0, videoSrc);
-
-        /*for (let id in options.basic) {
-            let { dynamic } = options.basic[id],
-                elem = document.getElementById('basic_' + id),
-                val = null,
-                shouldrun = true;
-
-            switch (options.basic[id].type) {
-                case 'checkbox':
-                    val = elem.checked;
-                    break;
-                case 'dropdown':
-                    val = elem.value;
-            }
-
-            if (dynamic.visibility !== null && ['boolean', 'function'].includes(typeof dynamic.visibility)) {
-                let val = true;
-                if (typeof dynamic.visibility === 'function')
-                    val = dynamic.visibility(genInfo());
-                else
-                    val = dynamic.visibility;
-
-                shouldrun = shouldrun && val;
-            }
-
-            if (dynamic.enabled !== null && ['boolean', 'function'].includes(typeof dynamic.enabled)) {
-                let val = true;
-                if (typeof dynamic.enabled === 'function')
-                    val = dynamic.enabled(genInfo());
-                else
-                    val = dynamic.enabled;
-
-                shouldrun = shouldrun && val;
-            }
-
-            if (shouldrun && options.basic[id].run !== null)
-                ffmpeg.command(options.basic[id].run, val);
-                //fullcommand(f, val, runffmpeg, infname, islast)
-
-        }
-
-        runFFMPEG(ffmpeg);*/
-
-        /*ffmpeg.finish().then(args => {
-
-            console.log(args);
-
-            runFFMPEG(args);
-
-        }).catch(e => {
-            throw e;
-        });*/
 
     }
 };

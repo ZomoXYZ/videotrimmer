@@ -266,7 +266,7 @@ module.exports = (video, onload, error) => {
         finish: (runFFMPEG, ffDirs) => {
             video.pause();
             isOpen = false;
-            editorOptions.finish(videoSrc, runFFMPEG, ffDirs);
+            editorOptions.finish(videoSrc, runFFMPEG, ffDirs, trimEndPos - trimStartPos);
         },
         data: () => {
             return { trimStartPos, trimEndPos, duration: trimEndPos-trimStartPos };
