@@ -1,8 +1,9 @@
 # videotrimmer v1.0.0 beta
 
-## current issues being worked on
+## current features/issues being worked on
 
-- progress bar will jump back to 0% every time a new command starts
+- on cancel, delete temps and final if there
+- on finish, delete temps
 
 # videotrimmer
 

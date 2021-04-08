@@ -341,83 +341,12 @@ addEventListener('load', () => {
      * https://ffmpeg.org/pipermail/ffmpeg-user/2014-March/020605.html
      * ffmpeg outputs data to stderr
      */
-    
-    //recursive function to run commands
-    function runffmpegCommand(commands, iteration = 0, promiseComplete, promiseError) {
-
-        //commands is array of args
-        
-        let run = (complete, error) => {
-        
-            //create the command
-            let command = commands[iteration]
-                
-            //run the command
-            let ffmpegShell = shell.spawn(ffmpegDir, command);
-            console.log(command);
-
-            //basic data stored that shouldn't be recalculated everytime ffmpeg outputs data
-            let preOutput = document.querySelector('#consoleoutput pre'),
-                frameCount = Math.floor(videoEditor.data().duration/(1/data.streams.primary.video.framerate));
-
-            //on ffmpeg data output
-            ffmpegShell.stderr.on('data', stdout => {
-                
-                //if it's already scrolled to the bottom then keep it scrolled to the bottom
-                let toScroll = Math.abs(document.querySelector('#consoleoutput pre').scrollTop - (document.querySelector('#consoleoutput pre').scrollHeight - document.querySelector('#consoleoutput pre').getBoundingClientRect().height)) < 25;
-
-                //output data so user can read it
-                console.info(stdout.toString());
-                preOutput.textContent+= '\n'+stdout;
-
-                if (toScroll)
-                    preOutput.scrollTop = preOutput.scrollHeight;
-
-                //calculate percent and display percent in progress bar
-                if (stdout.toString().match(/frame= *(\d+) fps/g)) {
-                    let currentFrame = parseInt(stdout.toString().match(/frame= *(\d+) fps/)[1]),
-                        percent = Math.max(0, Math.min(100, currentFrame/frameCount));
-
-                    percent = mapNumber(percent, 0, 1, 100/commands.length*iteration, 100/commands.length*(iteration+1));
-
-                    document.querySelector('#progress .progressbar .progressinner').style.width = round(percent, .01)+'%';
-                }
-
-            });
-            
-            //cancel button
-            let cancelButton = () => {
-                ffmpegShell.kill('SIGINT')
-            };
-            document.getElementById('returncancel').addEventListener('click', cancelButton);
-
-            //on ffmpeg done
-            ffmpegShell.on('close', code => {
-                console.log(`child process exited with code ${code}`);
-                
-                //disable cancel button
-                document.getElementById('returncancel').removeEventListener('click', cancelButton);
-                
-                //recurse if there's another command, otherwise return
-                if (commands.length-1 > iteration)
-                    runffmpegCommand(commands, iteration+1, complete, error);
-                else
-                    complete();
-            });
-            
-        };
-
-        //if iteration > 0 then this function is already in a promise and shouldn't create a second
-        if (iteration > 0)
-            run(promiseComplete, promiseError);
-        else
-            return new Promise((complete, error) => run(complete, error));
-    }
 
     //this has no error handling (must be done by parsing output)
     function runffmpegEachCommand(command, startpercent, endpercent) {
 
-        document.querySelector('#progress .progressbar .progressinner').style.width = '30px';
+        if (startpercent === 0)
+            document.querySelector('#progress .progressbar .progressinner').style.width = '30px';
 
         //command is array of args
 
