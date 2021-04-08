@@ -82,7 +82,10 @@ module.exports = {
             run: (ffmpeg, info) => {
 
                 let bitrate = 0,
-                    constantbr = false;
+                    videobitrate = 0,
+                    audiobitrate = 128,
+                    constantbr = false,
+                    usedMaxbitrate = false;
 
                 const getAuto = maxbitrate => {
                     let size = Math.min(info.data.streams.primary.video.width, info.data.streams.primary.video.height);
@@ -121,8 +124,11 @@ module.exports = {
                     }
 
                     bitrate = br*1e3;
-                    if (maxbitrate)
+                    if (maxbitrate) {
+                        if (bitrate > maxbitrate)
+                            usedMaxbitrate = true;
                         bitrate = Math.min(bitrate, maxbitrate);
+                    }
                     bitrate = Math.min(bitrate, info.data.streams.primary.video.bitrate / 1000);
 
                 };
@@ -138,16 +144,11 @@ module.exports = {
                         else if (info.options.basic.discordtypenitro)
                             max = 100;
 
+                        max *= .95; //95% of max, giving a buffer
+                        // ^ make this buffer changable under advanced options
+                        max *= 1e3;
 
-                        //convert max MB to KB but with base 1024 instead of 1000
-                        max -= .15; //give it a buffer bc it keeps going over by about .12
-
-                        max *= 1048576; //1024*1024
-                        max /= 1e3;
-
-                        let duration = parseFloat(info.data.streams.primary.video.duration);
-
-                        let maxbitrate = Math.floor(8 * max / duration); //simplified https://blog.frame.io/2017/03/06/calculate-video-bitrates/
+                        let maxbitrate = Math.floor(8 * max / info.duration); //simplified https://blog.frame.io/2017/03/06/calculate-video-bitrates/
 
                         constantbr = true;
 
@@ -159,22 +160,37 @@ module.exports = {
                         break;
                     case 'medium':
                         bitrate = 8e3;
+                        audiobitrate = 64;
                         break;
                     case 'small':
                         bitrate = 4e3;
+                        audiobitrate = 64;
                         break;
                     case 'extrasmall':
                         bitrate = 2e3;
+                        audiobitrate = 64;
                         break;
                 }
 
-                console.log('bitrate (kbps): ', bitrate);
+                ffmpeg.outputOptions('-map', '0:v:0', '-map', '0:a:0');
 
-                if (bitrate > 0)
-                    ffmpeg.videoBitrate(Math.floor(bitrate), constantbr);
+                videobitrate = bitrate;
+
+                if (usedMaxbitrate)
+                    videobitrate = bitrate - audiobitrate;
+
+                console.log(`duration: ${info.duration}s
+total bitrate: ${bitrate}Kbps
+video bitrate: ${videobitrate}Kbps
+audio bitrate: ${audiobitrate}Kbps`);
+
+                if (videobitrate > 0)
+                    ffmpeg.videoBitrate(Math.floor(videobitrate), constantbr);
+                if (audiobitrate > 0)
+                    ffmpeg.audioBitrate(Math.floor(audiobitrate), constantbr);
 
                 if (info.options.basic.compresssecondfile) {
-                    let fname = info.asNewFile('_compressed');
+                    info.asNewFile('_compressed');
                     return ffmpeg;
                 }
                 return ffmpeg;
@@ -231,7 +247,22 @@ module.exports = {
             run: null
         }
     },
-    advance: {
-
+    advance: { // not yet implemented, this is just the idea for later
+        autodiscordbuffer: {
+            parent: null,
+            type: "number",
+            input: {
+                default: 5,
+                min: 0,
+                max: 1,
+                step: 0.01
+            },
+            label: "Discord Auto Buffer",
+            dynamic: {
+                visibility: info => info.options.basic.tocompress && info.options.basic.compresstype === 'discord',
+                enabled: true
+            },
+            run: null
+        }
     }
 };
