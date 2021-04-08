@@ -1,11 +1,39 @@
 const fluentFFMPEG = require('fluent-ffmpeg'),
     path = require('path'),
     fs = require('fs'),
+    fsPromise = fs.promises,
     shell = require('child_process').spawnSync,
     options = require('./rawEditorOptions.js');
 
 var videoData = null,
     trimmedDuration = null; // will stay null until finish() is called form editor.js
+
+function randomChars(length) {
+    let chars = '';
+    for (let i = 0; i < length; i++)
+        chars += String.fromCharCode(97 + Math.round(Math.random() * 25));
+    return chars;
+}
+
+function copyFile(infile, outfile, i=0) {
+
+    let outfileMod = Object.assign({}, outfile),
+        suffix = '';
+
+    if (i >= 10)
+        suffix = randomChars(5);
+    else if (i > 0)
+        suffix += i;
+
+    outfileMod.name += suffix;
+    outfileMod.base = outfileMod.name + outfileMod.ext;
+
+    if (fs.existsSync(path.format(outfileMod)))
+        return copyFile(infile, outfileMod, i+1);
+
+    return fsPromise.copyFile(path.format(infile), path.format(outfileMod));
+    
+}
 
 function genInfo() {
 
@@ -227,9 +255,7 @@ class ffmpegWrapper {
         }
 
         let genFname = () => {
-            let chars = '';
-            for (let i = 0; i < 20; i++)
-                chars += String.fromCharCode(97 + Math.round(Math.random()*25));
+            let chars = randomChars(20);
             if (fs.existsSync(path.join(tempdir, chars+ext)))
                 return genFname();
             return chars;
@@ -287,10 +313,21 @@ class ffmpegWrapper {
             info.getInputPath = () => path.format(info.getInput());
             info.rawffmpeg = args => this.rawffmpeg(args);
             info.rawffprobe = args => this.rawffprobe(args);
-            info.asNewFile = outSuffix => {
-                let outfname = Object.assign({}, referencePath);
+            info.asNewFile = (outSuffix='_edited') => {
+                
+                if (infname.isTemp) {
+                    //copy last one out
+                    let copyLastfname = Object.assign({}, referencePath);
+                    copyLastfname.name += '_edited';
+                    copyLastfname.base = copyLastfname.name + copyLastfname.ext;
+
+                    copyFile(infname, copyLastfname);
+                }
+
+                outfname = Object.assign({}, referencePath);
                 outfname.name += outSuffix;
                 outfname.base = outfname.name + outfname.ext;
+
                 return outfname;
             }; //outfname will be path.parse object
 
@@ -302,14 +339,16 @@ class ffmpegWrapper {
 
             if (cmd instanceof fluentFFMPEG().constructor) {
 
+                let tempfname = this.genTemp(infname.ext);
+
                 if (outfname === null) {
                     if (islast) {
                         outfname = Object.assign({}, referencePath);
 
                         outfname.name+= '_edited';
                         outfname.base = outfname.name + outfname.ext;
-                    } else
-                        outfname = this.genTemp(infname.ext);
+                    }// else
+                        //outfname = this.genTemp(infname.ext);
                 }
 
                 if (cmd._complexFilters.get().length === 0) {
@@ -319,10 +358,10 @@ class ffmpegWrapper {
                         cmd.audioCodec('copy');
                 }
 
-                console.log('in', infname, path.format(infname));
-                console.log('out', outfname, path.format(outfname));
+                //console.log('in', infname, path.format(infname));
+                //console.log('out', outfname, path.format(outfname));
 
-                cmd.input(path.format(infname)).output(path.format(outfname));
+                cmd.input(path.format(infname)).output(path.format(tempfname));
 
                 if (typeof prePrepare === 'function')
                     prePrepare(cmd, isfirst, islast);
@@ -330,10 +369,8 @@ class ffmpegWrapper {
                 cmd._prepare(function (err, args) {
                     if (err)
                         fail(err);
-                    else {
-                        console.log(args);
-                        complete([args, outfname]);
-                    }
+                    else
+                        complete([args, tempfname, outfname]);
                 });
 
             }
@@ -406,20 +443,28 @@ module.exports = {
 
                 let args = [i === 0, i === allRunFuncs.length - 1, infname, runFFMPEG.prePrepare, lastNontempPath];
 
-                ffmpeg.fullcommand(...allRunFuncs[i], ...args).then(([args, outfname]) => {
+                ffmpeg.fullcommand(...allRunFuncs[i], ...args).then(([args, tempfname, outfname]) => {
                     runFFMPEG(args).then(cancelled => {
-                        if (!cancelled)
-                            eachOption(i + 1, outfname);
-                        else
+                        if (!cancelled) {
+                            if (outfname !== null)
+                                copyFile(tempfname, outfname);
+                            eachOption(i + 1, tempfname);
+                        } else {
                             runFFMPEG.finish();
+                            ffmpeg.clearTemp(true);
+                        }
                     }).catch(err => {
+                        ffmpeg.clearTemp();
                         throw err;
                     });
                 }).catch(err => {
+                    ffmpeg.clearTemp();
                     throw err;
                 });
-            } else
+            } else {
                 runFFMPEG.finish();
+                ffmpeg.clearTemp();
+            }
         };
 
         eachOption(0, videoSrc);

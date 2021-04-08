@@ -379,7 +379,6 @@ addEventListener('load', () => {
                 if (stdout.match(/frame= *(\d+) fps/g)) {
                     let currentFrame = parseInt(stdout.match(/frame= *(\d+) fps/)[1]),
                         percent = Math.max(0, Math.min(1, currentFrame / frameCount));
-                    console.log(currentFrame, frameCount, percent, startpercent, endpercent);
 
                     percent = mapNumber(percent, 0, 1, startpercent, endpercent);
 
@@ -388,8 +387,6 @@ addEventListener('load', () => {
                     let minpercent = (document.querySelector('#progress .progressbar').getBoundingClientRect().width - 10) / 30 / 100;
 
                     percent = mapNumber(percent, 0, 1, minpercent, 1);
-
-                    console.log(percent);
 
                     document.querySelector('#progress .progressbar .progressinner').style.width = round(percent * 100, .01) + '%';
                 }
@@ -419,51 +416,6 @@ addEventListener('load', () => {
 
         return new Promise((complete, error) => run(complete, error));
     }
-    
-    function runffmpeg(commands) {
-        
-        blockFile = true;
-
-        commands.finish((command, i) => {
-            if (i === 0) {
-
-                //set start/end positions
-                
-                if (round.floor(videoEditor.data().trimStartPos, .01) !== 0)
-                    command.seekInput(videoEditor.data().trimStartPos);
-                if (round.ceil(videoEditor.data().trimEndPos, .01) !== round.ceil(data.duration, .01))
-                    command.inputOptions('-to ' + videoEditor.data().trimEndPos);
-            }
-        }).then(args => {
-
-            console.log(args);
-
-            commands.clearTemp();
-
-            //run the commands
-            runffmpegCommand(args).then(() => {
-                document.querySelector('#progress .progressbar .progressinner').style.width = null;
-                document.getElementById('editsprogress').classList.add('finished');
-                blockFile = false;
-            }).catch(err => {
-                console.error('error', err);
-                document.body.classList.remove('editsprogress');
-            });
-
-        }).catch(e => {
-            throw e;
-        });
-        
-        
-    }
-
-    /*
-    runffmpegEach() = (args).then(() => {
-                            eachOption(i + 1, outfname);
-                        }).catch(err => {
-                            throw err;
-                        });
-                         */
     
     function runffmpegEach(total) {
         
@@ -508,7 +460,6 @@ addEventListener('load', () => {
         };
 
         return eachCommand;
-        
         
     }
     

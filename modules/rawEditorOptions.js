@@ -144,6 +144,8 @@ module.exports = {
                         else if (info.options.basic.discordtypenitro)
                             max = 100;
 
+                        max *= 1.024; //kibibyte to kilobyte
+
                         max *= .95; //95% of max, giving a buffer
                         // ^ make this buffer changable under advanced options
                         max *= 1e3;
