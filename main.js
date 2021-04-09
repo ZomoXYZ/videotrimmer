@@ -1,6 +1,6 @@
 const {app, BrowserWindow, ipcMain, Tray, nativeImage} = require('electron'),
-      path = require('path'),
-      fs = require('fs');
+    path = require('path'),
+    fs = require('fs');
 
 var IsLoaded = false;
 
