@@ -8,38 +8,55 @@
         "email": "ashley@funny.bike"
     },
     "build": {
-        "appId": "videotrimmer",
+        "appId": "dev.zomo.videotrimmer",
+        "productName": "videotrimmer",
         "files": [
             "index.html",
             "index.css",
             "index.css.map",
             "index.js",
             "main.js",
-            "resources/Open_Sans/*",
+            "resources/**/*",
+            "resources/**/*",
             "modules/*"
         ],
-        "dmg": {
-            "contents": [
+        "mac": {
+            "categoty": "public.app-category.utilities",
+            "darkModeSupport": true,
+            "icon": null,
+            "target": [
+                "mas",
                 {
-                    "x": 110,
-                    "y": 150
-                },
-                {
-                    "x": 240,
-                    "y": 150,
-                    "type": "link",
-                    "path": "/Applications"
+                    "target": "dmg",
+                    "backgroundColor": "#434442",
+                    "contents": [
+                        {
+                            "x": 110,
+                            "y": 150
+                        },
+                        {
+                            "x": 240,
+                            "y": 150,
+                            "type": "link",
+                            "path": "/Applications"
+                        }
+                    ]
                 }
             ]
         },
+        "win": {
+            "icon": null,
+            "target": [
+                "portable",
+                "nsis"
+            ]
+        },
         "linux": {
+            "icon": null,
             "target": [
                 "AppImage",
                 "deb"
             ]
-        },
-        "win": {
-            "target": "NSIS"
         }
     },
     "main": "main.js",
@@ -69,8 +86,10 @@
         "electron-builder": "^22.10.5"
     },
     "dependencies": {
+        "electron-json-storage": "^4.4.0",
         "ffbinaries": "^1.1.4",
         "fluent-ffmpeg": "^2.1.2",
-        "mime": "^2.5.2"
+        "mime": "^2.5.2",
+        "rimraf": "^3.0.2"
     }
 }
