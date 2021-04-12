@@ -230,6 +230,8 @@ audio bitrate: ${audiobitrate}Kbps`);
         discordtypenitro: {
             parent: null,
             type: "checkbox",
+            default: info => info.settings.has('discordnitro') && info.settings.get('discordnitro') === 1,
+            on: (target, info) => console.log('yeahhhh') && info.settings.set('discordnitro', target.checked ? 1 : 0),
             small: true,
             label: "Nitro",
             dynamic: {
@@ -240,6 +242,8 @@ audio bitrate: ${audiobitrate}Kbps`);
         },
         discordtypeclassic: {
             parent: "discordtypenitro",
+            default: info => info.settings.has('discordnitro') && info.settings.get('discordnitro') === 2,
+            on: (target, info) => info.settings.set('discordnitro', target.checked ? 2 : 0),
             small: true,
             label: "Nitro Classic",
             dynamic: {

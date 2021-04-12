@@ -1,10 +1,10 @@
-const editorOptions = require('./editorOptions.js');
-
-module.exports = (video, onload, error) => {
+module.exports = (video, onload, error, settings) => {
     /*
      * video: video html element
      * error: callback function in case of error
      */
+
+    const editorOptions = require('./editorOptions.js')(settings);
     
     //base definitions
     var videoPos = 0,

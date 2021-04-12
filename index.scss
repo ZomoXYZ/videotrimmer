@@ -61,25 +61,25 @@
 
 @font-face {
     font-family: OpenDyslexic;
-    src: url(./resources/OpenDyslexic2/OpenDyslexic-Bold.ttf);
+    src: url(./resources/OpenDyslexic2/OpenDyslexic-Bold.otf);
     font-weight: bold;
     font-style: normal;
 }
 @font-face {
     font-family: OpenDyslexic;
-    src: url(./resources/OpenDyslexic2/OpenDyslexic-BoldItalic.ttf);
+    src: url(./resources/OpenDyslexic2/OpenDyslexic-BoldItalic.otf);
     font-weight: bold;
     font-style: italic;
 }
 @font-face {
     font-family: OpenDyslexic;
-    src: url(./resources/OpenDyslexic2/OpenDyslexic-Italic.ttf);
+    src: url(./resources/OpenDyslexic2/OpenDyslexic-Italic.otf);
     font-weight: normal;
     font-style: italic;
 }
 @font-face {
     font-family: OpenDyslexic;
-    src: url(./resources/OpenDyslexic2/OpenDyslexic-Regular.ttf);
+    src: url(./resources/OpenDyslexic2/OpenDyslexic-Regular.otf);
     font-weight: normal;
     font-style: normal;
 }
@@ -124,13 +124,13 @@ body {
     overflow: hidden;
     cursor: default;
     
-    font-size: 24px;
+    font-size: var(--font-size);
     
     background: var(--background);
     color: var(--color);
 
     transition: color 200ms ease-in-out,
-    background 200ms ease-in-out;
+        background 200ms ease-in-out;
 
     box-sizing: inherit;
 
@@ -160,6 +160,7 @@ body {
  * general
  * 
  * upload screen
+ * settings screen
  * loading screen
  * processing video
  * editing page
@@ -269,8 +270,101 @@ body {
     }
 }
 
+/*toggle*/
+.toggle > label {
+    --toggle-background: var(--color);
+    --border: var(--button-hover-bg);
+    --thumb-background: var(--button-background);
+    --active-width: 5px;
+
+    [theme="light"] & {
+        --cb-background: #bbb;
+    }
+
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+
+    div {
+        display: inline-block;
+    }
+
+    input {
+        display: none;
+    }
+
+    .slider {
+        height: 21px;
+        width: 42px;
+        margin-right: 5px;
+        border-radius: 100px;
+        background: var(--toggle-background);
+        overflow: hidden;
+        display: flex;
+        align-content: center;
+
+        .thumb {
+            width: 21px;
+            height: 21px;
+            margin-left: 0px;
+            box-shadow: 0 0 5px black;
+            border-radius: 100%;
+            background: var(--thumb-background);
+            border-left: 2px solid var(--border);
+            border-right: 0px solid var(--border);
+
+            transition: margin .2s ease-in-out,
+                border-width .2s ease-in-out,
+                width .2s ease-in-out;
+        }
+
+    }
+
+    input:checked+.slider .thumb {
+        margin-left: 21px;
+        border-left: 0px solid var(--border);
+        border-right: 2px solid var(--border);
+    }
+
+    &.reverse {
+        .slider {
+            margin-right: 0;
+            margin-left: 5px;
+        }
+        span {
+            order: -1;
+        }
+    }
+
+    &:active input:not([disabled]) {
+        &+.slider .thumb {
+            width: calc(21px + var(--active-width));
+        }
+
+        &:checked+.slider .thumb {
+            margin-left: calc(21px - var(--active-width));
+        }
+    }
+
+    span {
+        transition: color 200ms ease-in-out;
+    }
+
+
+    input:disabled+.slider {
+        background: var(--thumb-background);
+
+        .thumb {
+            background: var(--thumb-background);
+            box-shadow: none;
+            border: none
+        }
+    }
+
+}
+
 /* dropdown */
-.dropdown>label {
+.dropdown > label {
     --dd-background: var(--color);
 
     [theme="light"] & {
@@ -327,11 +421,28 @@ body {
         transition: color 200ms ease-in-out;
     }
 }
+[dyslexic] .dropdown > label select {
+    font-family: var(--font-family);
+    font-size: 12px;
+}
 
-/*upload screen*/
+/*upload screen / defaults*/
 #uploadVideo {
     opacity: 1;
     pointer-events: all;
+}
+#settings {
+    opacity: 0;
+    pointer-events: none;
+
+    .section {
+        border-bottom: 1px solid black;
+        width: 100%;
+
+        &:last-child {
+            border-bottom: none;
+        }
+    }
 }
 #loadingMain {
     opacity: 0;
@@ -375,9 +486,64 @@ body {
     }
 }
 
+#settingsButton {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+
+    padding: 4px;
+
+    svg {
+        fill: var(--color);
+        width: 22px;
+    }
+
+}
+
+/*settings screen*/
+.settings {
+    #uploadVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #settings {
+        opacity: 1;
+        pointer-events: all;
+
+    }
+    #loadingMain {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #processingVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #editor {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #editsprogress {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #error {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #hoveringVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
 /*loading screen*/
 .loadingMain {
     #uploadVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #settings {
         opacity: 0;
         pointer-events: none;
     }
@@ -413,6 +579,10 @@ body {
         opacity: 0;
         pointer-events: none;
     }
+    #settings {
+        opacity: 0;
+        pointer-events: none;
+    }
     #loadingMain {
         opacity: 0;
         pointer-events: none;
@@ -442,6 +612,10 @@ body {
 /*editing page*/
 .editor {
     #uploadVideo {
+        opacity: 0;
+        pointer-events: none;
+    }
+    #settings {
         opacity: 0;
         pointer-events: none;
     }
@@ -642,6 +816,10 @@ body {
         opacity: 0;
         pointer-events: none;
     }
+    #settings {
+        opacity: 0;
+        pointer-events: none;
+    }
     #loadingMain {
         opacity: 0;
         pointer-events: none;
@@ -809,6 +987,10 @@ body {
         opacity: 0;
         pointer-events: none;
     }
+    #settings {
+        opacity: 0;
+        pointer-events: none;
+    }
     #loadingMain {
         opacity: 0;
         pointer-events: none;
@@ -891,6 +1073,10 @@ body {
     #uploadVideo {
         opacity: 0;
         pointer-events: all;
+    }
+    #settings {
+        opacity: 0;
+        pointer-events: none;
     }
     #loadingMain {
         opacity: 0;

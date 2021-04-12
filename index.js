@@ -1,28 +1,30 @@
 //basic variables
 const {ipcRenderer, webFrame} = require('electron'),
-      mime = require('mime'),
-      getMimeType = str => mime.getType(str) || '', //mime.getType() return null if no result, empty string is easier for my usage
-      os = require('os'),
-      fs = require('fs'),
-      path = require('path'),
-      shell = require('child_process'),
-      
-      Version = require('./package.json').version,//
-      
-      ffmpeg = require('fluent-ffmpeg'),
-      
-      secondsToTime = seconds => { //1000 (seconds) -> 16:40 (minutes:seconds)
-          seconds = Math.floor(seconds);
-          seconds = Math.max(0, seconds);
-          var minutes = Math.floor(seconds / 60);
-          seconds = seconds - (minutes * 60);
+    mime = require('mime'),
+    getMimeType = str => mime.getType(str) || '', //mime.getType() return null if no result, empty string is easier for my usage
+    os = require('os'),
+    fs = require('fs'),
+    path = require('path'),
+    shell = require('child_process'),
+    rimraf = require('rimraf'),
+    settingsOrig = require('electron-json-storage'),
+    
+    Version = require('./package.json').version,//
+    
+    ffmpeg = require('fluent-ffmpeg'),
+    
+    secondsToTime = seconds => { //1000 (seconds) -> 16:40 (minutes:seconds)
+        seconds = Math.floor(seconds);
+        seconds = Math.max(0, seconds);
+        var minutes = Math.floor(seconds / 60);
+        seconds = seconds - (minutes * 60);
 
-          if (minutes < 10) {minutes = "0"+minutes;}
-          if (seconds < 10) {seconds = "0"+seconds;}
-          return minutes+':'+seconds;
-      };
+        if (minutes < 10) {minutes = "0"+minutes;}
+        if (seconds < 10) {seconds = "0"+seconds;}
+        return minutes+':'+seconds;
+    };
 
-var ffDir, ffmpegDir, ffprobeDir;
+var settings, ffDir, ffmpegDir, ffprobeDir;
 
 //easy round functions
 const round = (num, closest=1) => Math.round(num/closest)*closest;
@@ -52,6 +54,31 @@ ipcRenderer.on('loaded', (event, data) => {
     if (!fs.existsSync(ffDir))
         ipcRenderer.send('exit', 'OS IS NOT SET UP');
 
+    if (!fs.existsSync(path.join(ffDir, 'storage')))
+        fs.mkdirSync(path.join(ffDir, 'storage'));
+
+    settingsOrig.setDataPath(path.join(ffDir, 'storage'));
+
+    let settingsProxy = {
+        get(obj, prop) {
+            if (prop === '_SETTINGS')
+                return settingsOrig;
+            return obj.get(prop);
+        },
+        set(obj, prop, value) {
+            if (prop === '_SETTINGS')
+                return null;
+            return obj.set(prop, value);
+        }
+    }
+
+    settings = new Proxy(settingsOrig, settingsProxy);
+
+    if (!settingsOrig.has('theme'))
+        settingsOrig.set('theme', 'dark');
+    if (!settingsOrig.has('dyslexic'))
+        settingsOrig.set('dyslexic', false);
+
     //aaaaaah
     ffmpeg.setFfmpegPath(ffmpegDir);
 
@@ -76,11 +103,12 @@ addEventListener('load', () => {
     //declarations outside of page scope
     const videoEditor = require('./modules/editor.js')(document.querySelector('#editor video'), () => {
         blockFile = false;
-    }, throwError);
+    }, throwError, settings);
     
     /* general declarations by page
      * 
      * upload screen/hover
+     * settings
      * processing video
      * editing page
      * loading edits
@@ -91,6 +119,9 @@ addEventListener('load', () => {
     
     //display version number
     document.getElementById('version').textContent = Version;
+
+    //settings button
+    document.getElementById('settingsButton').addEventListener('click', () => document.body.classList.add('settings'), false);
     
     //check for update
     var xhttp = new XMLHttpRequest();
@@ -173,6 +204,40 @@ addEventListener('load', () => {
             document.body.removeAttribute('class');
     }
     
+    /* settings */
+
+    document.getElementById('themeselect').addEventListener('change', e => document.body.setAttribute('theme', e.target.value), false);
+    document.getElementById('dyslexictoggle').addEventListener('change', e =>
+        e.target.checked ? document.body.setAttribute('dyslexic', '') : document.body.removeAttribute('dyslexic'), false);
+
+    document.getElementById('deletetemp').addEventListener('click', () => {
+        document.body.classList.remove('settings');
+        document.body.classList.add('loadingMain');
+
+        setTimeout(() => {
+            let tempDir = path.join(ffDir, 'temp');
+            if (fs.existsSync(tempDir)) {
+                rimraf.sync(path.join(ffDir, 'temp'));
+                fs.mkdirSync(tempDir)
+            }
+            document.body.classList.remove('loadingMain');
+            document.body.classList.add('settings');
+        }, 200);
+    }, false);
+
+    document.getElementById('deleteall').addEventListener('click', () => {
+        document.body.classList.remove('settings');
+        document.body.classList.add('loadingMain');
+
+        setTimeout(() => {
+            rimraf.sync(ffDir);
+            require('electron').remote.getCurrentWindow().close();
+
+        }, 200);
+    }, false);
+
+    document.getElementById('closeSettings').addEventListener('click', () => document.body.classList.remove('settings'), false);
+
     /* processing video */
     
     //ffprobe file and process the data
