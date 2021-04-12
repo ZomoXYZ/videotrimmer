@@ -1,5 +1,6 @@
 appId: "dev.zomo.videotrimmer"
 productName: "videotrimmer beta"
+
 files:
   - "index.html"
   - "index.css"
@@ -9,6 +10,7 @@ files:
   - "resources/**/*"
   - "resources/**/*"
   - "modules/*"
+
 mac:
   category: "public.app-category.utilities"
   darkModeSupport: true
@@ -17,6 +19,7 @@ mac:
     - "mas"
     - "dmg"
   publish: "github"
+
 dmg:
   backgroundColor: "#434442"
   contents:
@@ -26,12 +29,14 @@ dmg:
       y: 150
       type: "link"
       path: "/Applications"
+
 win:
   icon: null
   target:
     - "portable"
     - "nsis"
   publish: "github"
+  
 linux:
   icon: null
   target:
