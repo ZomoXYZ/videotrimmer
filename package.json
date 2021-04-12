@@ -42,21 +42,24 @@
                         }
                     ]
                 }
-            ]
+            ],
+            "publish": "github"
         },
         "win": {
             "icon": null,
             "target": [
                 "portable",
                 "nsis"
-            ]
+            ],
+            "publish": "github"
         },
         "linux": {
             "icon": null,
             "target": [
                 "AppImage",
                 "deb"
-            ]
+            ],
+            "publish": "github"
         }
     },
     "main": "main.js",
@@ -87,6 +90,7 @@
     },
     "dependencies": {
         "electron-json-storage": "^4.4.0",
+        "electron-updater": "^4.3.8",
         "ffbinaries": "^1.1.4",
         "fluent-ffmpeg": "^2.1.2",
         "mime": "^2.5.2",
