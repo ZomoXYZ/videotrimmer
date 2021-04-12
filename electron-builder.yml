@@ -16,8 +16,8 @@ mac:
   darkModeSupport: true
   icon: null
   target:
-    - "mas"
     - "dmg"
+    - "zip"
   publish: "github"
 
 dmg:
@@ -36,7 +36,7 @@ win:
     - "portable"
     - "nsis"
   publish: "github"
-  
+
 linux:
   icon: null
   target:
