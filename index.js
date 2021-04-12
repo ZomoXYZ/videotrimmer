@@ -11,18 +11,7 @@ const {ipcRenderer, webFrame} = require('electron'),
     
     Version = require('./package.json').version,//
     
-    ffmpeg = require('fluent-ffmpeg'),
-    
-    secondsToTime = seconds => { //1000 (seconds) -> 16:40 (minutes:seconds)
-        seconds = Math.floor(seconds);
-        seconds = Math.max(0, seconds);
-        var minutes = Math.floor(seconds / 60);
-        seconds = seconds - (minutes * 60);
-
-        if (minutes < 10) {minutes = "0"+minutes;}
-        if (seconds < 10) {seconds = "0"+seconds;}
-        return minutes+':'+seconds;
-    };
+    ffmpeg = require('fluent-ffmpeg');
 
 var settings, ffDir, ffmpegDir, ffprobeDir;
 
