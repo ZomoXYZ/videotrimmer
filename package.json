@@ -7,61 +7,6 @@
         "name": "ashley",
         "email": "ashley@funny.bike"
     },
-    "build": {
-        "appId": "dev.zomo.videotrimmer",
-        "productName": "videotrimmer",
-        "files": [
-            "index.html",
-            "index.css",
-            "index.css.map",
-            "index.js",
-            "main.js",
-            "resources/**/*",
-            "resources/**/*",
-            "modules/*"
-        ],
-        "mac": {
-            "categoty": "public.app-category.utilities",
-            "darkModeSupport": true,
-            "icon": null,
-            "target": [
-                "mas",
-                {
-                    "target": "dmg",
-                    "backgroundColor": "#434442",
-                    "contents": [
-                        {
-                            "x": 110,
-                            "y": 150
-                        },
-                        {
-                            "x": 240,
-                            "y": 150,
-                            "type": "link",
-                            "path": "/Applications"
-                        }
-                    ]
-                }
-            ],
-            "publish": "github"
-        },
-        "win": {
-            "icon": null,
-            "target": [
-                "portable",
-                "nsis"
-            ],
-            "publish": "github"
-        },
-        "linux": {
-            "icon": null,
-            "target": [
-                "AppImage",
-                "deb"
-            ],
-            "publish": "github"
-        }
-    },
     "main": "main.js",
     "scripts": {
         "start": "electron .",
