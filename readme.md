@@ -24,11 +24,11 @@
 
 **additions**
 
-- ~~auto update~~ soon
+- auto update
 - more detailed compression
   - auto and discord auto
 - audio normalization
-- ~~button to display keybinds~~ soon, will be the settings button noted above
+- settings button on main screen
 
 **fixes**
 

@@ -4,3 +4,4 @@ package-lock.json
 yarn.lock
 *.tgz
 issues
+gh_publish.sh
