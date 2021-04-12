@@ -1,6 +1,15 @@
 const {app, BrowserWindow, ipcMain, Tray, nativeImage} = require('electron'),
     path = require('path'),
-    fs = require('fs');
+    fs = require('fs'),
+    { autoUpdater } = require("electron-updater");
+
+autoUpdater.logger = require("electron-log");
+autoUpdater.logger.transports.file.level = "info";
+autoUpdater.allowPrerelease = true;
+autoUpdater.setFeedURL({
+    provider: "generic",
+    url: "https://gitlab.com/_example_repo_/-/jobs/artifacts/master/raw/dist?job=build"
+});
 
 var IsLoaded = false;
 
@@ -56,6 +65,8 @@ function downloadFfmpeg() {
     
 }
 function createWindow() {
+
+    autoUpdater.checkForUpdatesAndNotify();
     
     mainWindow = new BrowserWindow({
         width: 530, height: 560,
