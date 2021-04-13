@@ -14,7 +14,13 @@
 
 ## changelog
 
-### v1.0.0
+### v1.0.0-beta.2
+
+**changes**
+
+- changed `AppDataPath()` in `main.js` to use the app name rather than just `Ashley-VideoTrimmer`
+
+### v1.0.0-beta.1
 
 **changes**
 
