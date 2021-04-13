@@ -50,7 +50,7 @@ ipcRenderer.on('loaded', (event, data) => {
     //settingsOrig.setDataPath(path.join(ffDir, 'storage'));
 
     let settingsProxy = {
-            get(obj, prop) {
+            get(_, prop) {
                 if (!fs.existsSync(path.join(settingsPath, prop + '.json')))
                     return undefined;
                 
@@ -60,7 +60,7 @@ ipcRenderer.on('loaded', (event, data) => {
                     return undefined;
                 }
             },
-            set(obj, prop, value) {
+            set(_, prop, value) {
                 console.log
                 return fs.writeFileSync(path.join(settingsPath, prop + '.json'), JSON.stringify(value));
             }
