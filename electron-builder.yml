@@ -1,5 +1,6 @@
 appId: "dev.zomo.videotrimmer"
-productName: "videotrimmer beta"
+productName: "Videotrimmer Beta"
+artifactName: "${productName}-${os}-${version}.${ext}"
 
 files:
   - "index.html"
@@ -36,6 +37,9 @@ win:
     - "portable"
     - "nsis"
   publish: "github"
+
+nsis:
+  deleteAppDataOnUninstall: true
 
 linux:
   icon: null
