@@ -7,7 +7,6 @@ const {ipcRenderer, webFrame} = require('electron'),
     path = require('path'),
     shell = require('child_process'),
     rimraf = require('rimraf'),
-    settingsOrig = require('electron-json-storage'),
     
     Version = require('./package.json').version,//
     
@@ -52,25 +51,29 @@ ipcRenderer.on('loaded', (event, data) => {
 
     let settingsProxy = {
             get(obj, prop) {
-                if (prop === '_SETTINGS')
-                    return settingsOrig;
                 if (!fs.existsSync(path.join(settingsPath, prop + '.json')))
                     return undefined;
-                return JSON.parse(fs.readFileSync(path.join(settingsPath, prop + '.json')).toString());
+                
+                try {
+                    return JSON.parse(fs.readFileSync(path.join(settingsPath, prop + '.json')).toString());
+                } catch(e) {
+                    return undefined;
+                }
             },
             set(obj, prop, value) {
-                if (prop === '_SETTINGS')
-                    return null;
+                console.log
                 return fs.writeFileSync(path.join(settingsPath, prop + '.json'), JSON.stringify(value));
             }
         };
 
     settings = new Proxy({}, settingsProxy);
 
-    if (!settingsOrig.has('theme'))
-        settingsOrig.set('theme', 'dark');
-    if (!settingsOrig.has('dyslexic'))
-        settingsOrig.set('dyslexic', false);
+    if (settings.autoupdate === undefined)
+        settings.autoupdate = true;
+    if (settings.theme === undefined)
+        settings.theme = 'dark';
+    if (settings.dyslexic === undefined)
+        settings.dyslexic = false;
 
     //aaaaaah
     ffmpeg.setFfmpegPath(ffmpegDir);
@@ -85,8 +88,6 @@ ipcRenderer.on('loaded', (event, data) => {
 ipcRenderer.send('isLoaded');
 
 addEventListener('load', () => {
-
-    var draggedover = false;
     
     if (MainReady) {
         document.body.classList.remove('loadingMain');
@@ -154,20 +155,15 @@ addEventListener('load', () => {
         document.addEventListener(eventName, e => {e.preventDefault();e.stopPropagation();}, false); //prevent defualt
     });
     document.addEventListener('dragover', e => {
-        if (!blockFile) {
+        if (!blockFile)
             document.body.classList.add('hoveringVideo');
-            draggedover = true;
-        }
     });
     document.addEventListener('dragleave', e => {
-        draggedover = false;
         document.body.classList.remove('hoveringVideo');
     });
     document.addEventListener('drop', e => {
-        if (!blockFile) {
-            draggedover = false;
+        if (!blockFile)
             document.body.classList.remove('hoveringVideo');
-        }
     });
     document.addEventListener('drop', e => {
         if (!blockFile)
@@ -199,9 +195,33 @@ addEventListener('load', () => {
     
     /* settings */
 
-    document.getElementById('themeselect').addEventListener('change', e => document.body.setAttribute('theme', e.target.value), false);
-    document.getElementById('dyslexictoggle').addEventListener('change', e =>
-        e.target.checked ? document.body.setAttribute('dyslexic', '') : document.body.removeAttribute('dyslexic'), false);
+    //auto update
+    document.getElementById('autoupdatetoggle').checked = settings.autoupdate;
+    document.getElementById('autoupdatetoggle').addEventListener('change', e => {
+        settings.autoupdate = e.target.checked;
+    }, false);
+
+    //theme
+    document.body.setAttribute('theme', settings.theme);
+    document.getElementById('themeselect').value = settings.theme;
+    document.getElementById('themeselect').addEventListener('change', e => {
+        document.body.setAttribute('theme', e.target.value);
+        settings.theme = e.target.value;
+    }, false);
+    
+    //dyslexia
+    if (settings.dyslexic)
+        document.body.setAttribute('dyslexic', '');
+    else
+        document.body.removeAttribute('dyslexic');
+    document.getElementById('dyslexictoggle').checked = settings.dyslexic;
+    document.getElementById('dyslexictoggle').addEventListener('change', e => {
+        if (e.target.checked)
+            document.body.setAttribute('dyslexic', '');
+        else
+            document.body.removeAttribute('dyslexic');
+        settings.dyslexic = e.target.checked;
+    }, false);
 
     document.getElementById('deletetemp').addEventListener('click', () => {
         document.body.classList.remove('settings');

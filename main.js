@@ -67,7 +67,9 @@ function downloadFfmpeg() {
 }
 function createWindow() {
 
-    autoUpdater.checkForUpdatesAndNotify();
+    let autoupdatePath = path.join(getAppDataPath(), 'storage', 'autoupdate.json');
+    if (fs.existsSync(autoupdatePath) && JSON.parse(fs.readFileSync(autoupdatePath).toString()))
+        autoUpdater.checkForUpdatesAndNotify();
     
     mainWindow = new BrowserWindow({
         width: 530, height: 560,
