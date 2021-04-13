@@ -13,7 +13,7 @@ const {ipcRenderer, webFrame} = require('electron'),
     
     ffmpeg = require('fluent-ffmpeg');
 
-var settings, ffDir, ffmpegDir, ffprobeDir;
+var settings, appDataPath, ffDir, ffmpegDir, ffprobeDir, settingsPath;
 
 //easy round functions
 const round = (num, closest=1) => Math.round(num/closest)*closest;
@@ -35,33 +35,37 @@ var MainReady = false,
 ipcRenderer.on('loaded', (event, data) => {
     
     //ffmpeg binaries https://ffbinaries.com/downloads
+    appDataPath = data;
     ffDir = path.join(data, 'ffmpeg-binaries');
     ffmpegDir = path.join(ffDir, 'ffmpeg');
     ffprobeDir = path.join(ffDir, 'ffprobe');
+    settingsPath = path.join(data, 'storage');
 
     //in case an error happened in main.js
     if (!fs.existsSync(ffDir))
         ipcRenderer.send('exit', 'OS IS NOT SET UP');
+    
+    if (!fs.existsSync(settingsPath))
+        fs.mkdirSync(settingsPath);
 
-    if (!fs.existsSync(path.join(ffDir, 'storage')))
-        fs.mkdirSync(path.join(ffDir, 'storage'));
-
-    settingsOrig.setDataPath(path.join(ffDir, 'storage'));
+    //settingsOrig.setDataPath(path.join(ffDir, 'storage'));
 
     let settingsProxy = {
-        get(obj, prop) {
-            if (prop === '_SETTINGS')
-                return settingsOrig;
-            return obj.get(prop);
-        },
-        set(obj, prop, value) {
-            if (prop === '_SETTINGS')
-                return null;
-            return obj.set(prop, value);
-        }
-    }
+            get(obj, prop) {
+                if (prop === '_SETTINGS')
+                    return settingsOrig;
+                if (!fs.existsSync(path.join(settingsPath, prop + '.json')))
+                    return undefined;
+                return JSON.parse(fs.readFileSync(path.join(settingsPath, prop + '.json')).toString());
+            },
+            set(obj, prop, value) {
+                if (prop === '_SETTINGS')
+                    return null;
+                return fs.writeFileSync(path.join(settingsPath, prop + '.json'), JSON.stringify(value));
+            }
+        };
 
-    settings = new Proxy(settingsOrig, settingsProxy);
+    settings = new Proxy({}, settingsProxy);
 
     if (!settingsOrig.has('theme'))
         settingsOrig.set('theme', 'dark');
