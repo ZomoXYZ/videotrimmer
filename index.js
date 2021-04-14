@@ -1,5 +1,6 @@
 //basic variables
-const {ipcRenderer, webFrame} = require('electron'),
+const { ipcRenderer, webFrame, remote} = require('electron'),
+    { nativeTheme } = remote,
     mime = require('mime'),
     getMimeType = str => mime.getType(str) || '', //mime.getType() return null if no result, empty string is easier for my usage
     os = require('os'),
@@ -71,7 +72,7 @@ ipcRenderer.on('loaded', (event, data) => {
     if (settings.autoupdate === undefined)
         settings.autoupdate = true;
     if (settings.theme === undefined)
-        settings.theme = 'dark';
+        settings.theme = 'system';
     if (settings.dyslexic === undefined)
         settings.dyslexic = false;
 
@@ -86,6 +87,23 @@ ipcRenderer.on('loaded', (event, data) => {
     }
 });
 ipcRenderer.send('isLoaded');
+
+function updateTheme() {
+    //dark/light theme
+    document.body.setAttribute('theme', nativeTheme.shouldUseDarkColors ? 'dark' : 'light');
+
+    //high contrast
+    if (nativeTheme.shouldUseHighContrastColors)
+        document.body.setAttribute('contrast', '');
+    else
+        document.body.removeAttribute('contrast');
+
+    //invert
+    if (nativeTheme.shouldUseInvertedColorScheme)
+        document.body.setAttribute('invert', '');
+    else
+        document.body.removeAttribute('invert');
+}
 
 addEventListener('load', () => {
     
@@ -202,13 +220,22 @@ addEventListener('load', () => {
     }, false);
 
     //theme
-    document.body.setAttribute('theme', settings.theme);
+    try {
+        nativeTheme.themeSource = settings.theme;
+    } catch (e) {
+        settings.theme = 'system';
+        nativeTheme.themeSource = settings.theme;
+    }
     document.getElementById('themeselect').value = settings.theme;
     document.getElementById('themeselect').addEventListener('change', e => {
         document.body.setAttribute('theme', e.target.value);
         settings.theme = e.target.value;
+        nativeTheme.themeSource = settings.theme;
     }, false);
-    
+
+    updateTheme();
+    nativeTheme.on('updated', updateTheme);
+
     //dyslexia
     if (settings.dyslexic)
         document.body.setAttribute('dyslexic', '');

@@ -101,6 +101,18 @@
     --button-active-bg: #555;
 }
 
+[contrast] {
+    filter: contrast(1.5);
+}
+
+[invert] {
+    filter: invert(1);
+}
+
+[contrast][invert] {
+    filter: contrast(1.5) invert(1);
+}
+
 html {
     box-sizing: border-box;
     -webkit-font-smoothing: antialiased;
@@ -126,17 +138,27 @@ body {
     
     font-size: var(--font-size);
     
-    background: var(--background);
     color: var(--color);
 
-    transition: color 200ms ease-in-out,
-        background 200ms ease-in-out;
+    transition: color 200ms ease-in-out;
 
     box-sizing: inherit;
 
-    *:before,
-    *:after {
+    *::before,
+    *::after {
         box-sizing: inherit;
+    }
+
+    &::after {
+        content: '';
+        background: var(--background);
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        transition: background 200ms ease-in-out;
     }
 
     > div {
