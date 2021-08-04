@@ -5,3 +5,4 @@ yarn.lock
 *.tgz
 issues
 gh_publish.sh
+.vscode

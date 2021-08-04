@@ -1,9 +1,3 @@
-# videotrimmer v1.0.0 beta
-
-## current features/issues being worked on
-
-- add settings button to first screen
-
 # videotrimmer
 
 [trello todo list](https://trello.com/b/B28JSPwF/videotrimmer-features)
@@ -12,21 +6,19 @@
 
 [video playback timing is inaccurate](https://github.com/w3c/media-and-entertainment/issues/4) which may cause the start and end timings to be off by a frame or two.
 
+[dmg-license](https://github.com/argv-minus-one/dmg-license) uses an outdated version of `plist`, resulting in [`xmldom` running a version with a theoretical vulnerability](https://www.npmjs.com/advisories/1769), this is outside of my control, and I have to wait for that package to update
+
 ## changelog
 
-### v1.0.0-beta.2
-
-**changes**
-
-- changed `AppDataPath()` in `main.js` to use the app name rather than just `Ashley-VideoTrimmer`
-
-### v1.0.0-beta.1
+### v1.0.0
 
 **changes**
 
 - improved editor options framework
   - this improves maintainability and allows for more complex effects
 - progress bar shows more detailed information
+
+- changed `AppDataPath()` in `main.js` to use the app name rather than just `Ashley-VideoTrimmer`
 
 **additions**
 
@@ -40,6 +32,11 @@
 
 - update checker would give false positives
 - progress bar wouldn't revert from circle
+- updated dependencies
+
+**notes**
+
+- while the settings page does exist and is functional, it is not styled well and will be updated whenever I get around to finishing it
 
 ### v0.4.2
 
