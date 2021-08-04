@@ -1,5 +1,5 @@
 appId: "dev.zomo.videotrimmer"
-productName: "Videotrimmer Beta"
+productName: "Videotrimmer"
 artifactName: "${productName}-${os}-${version}.${ext}"
 
 files:
