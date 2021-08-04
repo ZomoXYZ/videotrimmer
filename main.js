@@ -80,7 +80,9 @@ function createWindow() {
         titleBarStyle: 'default',
         webPreferences: {
             nodeIntegration: true,
-            worldSafeExecuteJavaScript: true
+            worldSafeExecuteJavaScript: true,
+            contextIsolation: false,
+            enableRemoteModule: true
         }
     });
     

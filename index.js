@@ -62,7 +62,7 @@ ipcRenderer.on('loaded', (event, data) => {
                 }
             },
             set(_, prop, value) {
-                console.log
+                //console.log
                 return fs.writeFileSync(path.join(settingsPath, prop + '.json'), JSON.stringify(value));
             }
         };
