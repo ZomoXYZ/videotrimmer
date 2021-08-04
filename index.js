@@ -1,28 +1,19 @@
 //basic variables
-const {ipcRenderer, webFrame} = require('electron'),
-      mime = require('mime'),
-      getMimeType = str => mime.getType(str) || '', //mime.getType() return null if no result, empty string is easier for my usage
-      os = require('os'),
-      fs = require('fs'),
-      path = require('path'),
-      shell = require('child_process'),
-      
-      Version = require('./package.json').version,//
-      
-      ffmpeg = require('fluent-ffmpeg'),
-      
-      secondsToTime = seconds => { //1000 (seconds) -> 16:40 (minutes:seconds)
-          seconds = Math.floor(seconds);
-          seconds = Math.max(0, seconds);
-          var minutes = Math.floor(seconds / 60);
-          seconds = seconds - (minutes * 60);
+const { ipcRenderer, webFrame, remote} = require('electron'),
+    { nativeTheme } = remote,
+    mime = require('mime'),
+    getMimeType = str => mime.getType(str) || '', //mime.getType() return null if no result, empty string is easier for my usage
+    os = require('os'),
+    fs = require('fs'),
+    path = require('path'),
+    shell = require('child_process'),
+    rimraf = require('rimraf'),
+    
+    Version = require('./package.json').version,//
+    
+    ffmpeg = require('fluent-ffmpeg');
 
-          if (minutes < 10) {minutes = "0"+minutes;}
-          if (seconds < 10) {seconds = "0"+seconds;}
-          return minutes+':'+seconds;
-      };
-
-var ffDir, ffmpegDir, ffprobeDir;
+var settings, appDataPath, ffDir, ffmpegDir, ffprobeDir, settingsPath;
 
 //easy round functions
 const round = (num, closest=1) => Math.round(num/closest)*closest;
@@ -39,40 +30,97 @@ const mapNumber = (num, in_min, in_max, out_min, out_max) => {
 webFrame.setVisualZoomLevelLimits(1, 1);
 
 //on ffmpeg downloaded
-var MainReady = false;
+var MainReady = false,
+    blockFile = true;//should block file from being dragged over
 ipcRenderer.on('loaded', (event, data) => {
     
     //ffmpeg binaries https://ffbinaries.com/downloads
+    appDataPath = data;
     ffDir = path.join(data, 'ffmpeg-binaries');
     ffmpegDir = path.join(ffDir, 'ffmpeg');
     ffprobeDir = path.join(ffDir, 'ffprobe');
+    settingsPath = path.join(data, 'storage');
 
     //in case an error happened in main.js
     if (!fs.existsSync(ffDir))
         ipcRenderer.send('exit', 'OS IS NOT SET UP');
+    
+    if (!fs.existsSync(settingsPath))
+        fs.mkdirSync(settingsPath);
+
+    //settingsOrig.setDataPath(path.join(ffDir, 'storage'));
+
+    let settingsProxy = {
+            get(_, prop) {
+                if (!fs.existsSync(path.join(settingsPath, prop + '.json')))
+                    return undefined;
+                
+                try {
+                    return JSON.parse(fs.readFileSync(path.join(settingsPath, prop + '.json')).toString());
+                } catch(e) {
+                    return undefined;
+                }
+            },
+            set(_, prop, value) {
+                console.log
+                return fs.writeFileSync(path.join(settingsPath, prop + '.json'), JSON.stringify(value));
+            }
+        };
+
+    settings = new Proxy({}, settingsProxy);
+
+    if (settings.autoupdate === undefined)
+        settings.autoupdate = true;
+    if (settings.theme === undefined)
+        settings.theme = 'system';
+    if (settings.dyslexic === undefined)
+        settings.dyslexic = false;
 
     //aaaaaah
     ffmpeg.setFfmpegPath(ffmpegDir);
+
+    MainReady = true;
     
-    //block file hover
-    if (['complete', 'interactive'].includes(document.readyState))
+    if (['complete', 'interactive'].includes(document.readyState)) {
         document.body.classList.remove('loadingMain');
+        blockFile = false;
+    }
 });
 ipcRenderer.send('isLoaded');
 
+function updateTheme() {
+    //dark/light theme
+    document.body.setAttribute('theme', nativeTheme.shouldUseDarkColors ? 'dark' : 'light');
+
+    //high contrast
+    if (nativeTheme.shouldUseHighContrastColors)
+        document.body.setAttribute('contrast', '');
+    else
+        document.body.removeAttribute('contrast');
+
+    //invert
+    if (nativeTheme.shouldUseInvertedColorScheme)
+        document.body.setAttribute('invert', '');
+    else
+        document.body.removeAttribute('invert');
+}
+
 addEventListener('load', () => {
     
-    if (MainReady)
+    if (MainReady) {
         document.body.classList.remove('loadingMain');
+        blockFile = false;
+    }
     
     //declarations outside of page scope
     const videoEditor = require('./modules/editor.js')(document.querySelector('#editor video'), () => {
         blockFile = false;
-    });
+    }, throwError, settings);
     
     /* general declarations by page
      * 
      * upload screen/hover
+     * settings
      * processing video
      * editing page
      * loading edits
@@ -83,6 +131,9 @@ addEventListener('load', () => {
     
     //display version number
     document.getElementById('version').textContent = Version;
+
+    //settings button
+    document.getElementById('settingsButton').addEventListener('click', () => document.body.classList.add('settings'), false);
     
     //check for update
     var xhttp = new XMLHttpRequest();
@@ -100,7 +151,8 @@ addEventListener('load', () => {
                     if (nv > cv) {
                         document.getElementById('version').classList.add('update');
                         break;
-                    }
+                    } else if (cv > nv)
+                        break;
                 }
                 
             } catch(e) {}
@@ -116,28 +168,20 @@ addEventListener('load', () => {
             videoExts.push('.'+ext);
     document.getElementById('fileupload').setAttribute('accept', videoExts.join(','));
     
-    var blockFile = false, //should block file from being dragged over
-        draggedover = false;
-    
     //file drag+drop listeners
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         document.addEventListener(eventName, e => {e.preventDefault();e.stopPropagation();}, false); //prevent defualt
     });
     document.addEventListener('dragover', e => {
-        if (!blockFile) {
+        if (!blockFile)
             document.body.classList.add('hoveringVideo');
-            draggedover = true;
-        }
     });
     document.addEventListener('dragleave', e => {
-        draggedover = false;
         document.body.classList.remove('hoveringVideo');
     });
     document.addEventListener('drop', e => {
-        if (!blockFile) {
-            draggedover = false;
+        if (!blockFile)
             document.body.classList.remove('hoveringVideo');
-        }
     });
     document.addEventListener('drop', e => {
         if (!blockFile)
@@ -155,7 +199,7 @@ addEventListener('load', () => {
         videoEditor.open(document.querySelector('#editor video'));
         videoEditor.onload(editorScaleDo);
         
-        document.querySelector('#progress .progressbar').classList.remove('finished');
+        document.getElementById('editsprogress').classList.remove('finished');
 
         console.log(files);
         
@@ -167,6 +211,73 @@ addEventListener('load', () => {
             document.body.removeAttribute('class');
     }
     
+    /* settings */
+
+    //auto update
+    document.getElementById('autoupdatetoggle').checked = settings.autoupdate;
+    document.getElementById('autoupdatetoggle').addEventListener('change', e => {
+        settings.autoupdate = e.target.checked;
+    }, false);
+
+    //theme
+    try {
+        nativeTheme.themeSource = settings.theme;
+    } catch (e) {
+        settings.theme = 'system';
+        nativeTheme.themeSource = settings.theme;
+    }
+    document.getElementById('themeselect').value = settings.theme;
+    document.getElementById('themeselect').addEventListener('change', e => {
+        document.body.setAttribute('theme', e.target.value);
+        settings.theme = e.target.value;
+        nativeTheme.themeSource = settings.theme;
+    }, false);
+
+    updateTheme();
+    nativeTheme.on('updated', updateTheme);
+
+    //dyslexia
+    if (settings.dyslexic)
+        document.body.setAttribute('dyslexic', '');
+    else
+        document.body.removeAttribute('dyslexic');
+    document.getElementById('dyslexictoggle').checked = settings.dyslexic;
+    document.getElementById('dyslexictoggle').addEventListener('change', e => {
+        if (e.target.checked)
+            document.body.setAttribute('dyslexic', '');
+        else
+            document.body.removeAttribute('dyslexic');
+        settings.dyslexic = e.target.checked;
+    }, false);
+
+    document.getElementById('deletetemp').addEventListener('click', () => {
+        document.body.classList.remove('settings');
+        document.body.classList.add('loadingMain');
+
+        setTimeout(() => {
+            let tempDir = path.join(ffDir, 'temp');
+            if (fs.existsSync(tempDir)) {
+                rimraf.sync(path.join(ffDir, 'temp'));
+                fs.mkdirSync(tempDir)
+            }
+            document.body.classList.remove('loadingMain');
+            document.body.classList.add('settings');
+        }, 200);
+    }, false);
+
+    document.getElementById('deleteall').addEventListener('click', () => {
+        document.body.classList.remove('settings');
+        document.body.classList.add('loadingMain');
+
+        setTimeout(() => {
+            rimraf.sync(ffDir);
+            require('electron').remote.getCurrentWindow().close();
+
+        }, 200);
+    }, false);
+
+    document.getElementById('closeSettings').addEventListener('click', () => document.body.classList.remove('settings'), false);
+
     /* processing video */
     
     //ffprobe file and process the data
@@ -289,45 +400,23 @@ addEventListener('load', () => {
             else
                 input.parentElement.classList.remove('disabled');
         });
-        
-        videoEditor.src(file.path, data);
+
+        videoEditor.src(data);
         
     }
-    
-    //checkbox exclusivity listeners
-    document.getElementById('fixmic').addEventListener('change', e => {
-        if (e.target.checked) {
-            document.getElementById('onlygame').checked = false;
-            document.getElementById('onlygame').setAttribute('disabled', '');
-        } else
-            document.getElementById('onlygame').removeAttribute('disabled');
-    });
-    document.getElementById('onlygame').addEventListener('change', e => {
-        if (e.target.checked) {
-            document.getElementById('fixmic').checked = false;
-            document.getElementById('fixmic').setAttribute('disabled', '');
-        } else
-            document.getElementById('fixmic').removeAttribute('disabled');
-    });
-    document.getElementById('tocompress').addEventListener('change', e => {
-        if (!e.target.checked) {
-            document.getElementById('compresssecondfile').checked = false;
-            document.getElementById('compresssecondfile').setAttribute('disabled', '');
-        } else
-            document.getElementById('compresssecondfile').removeAttribute('disabled');
-    });
-    document.getElementById('compresssecondfile').addEventListener('change', e => {
-    });
     
     //finish button
     document.querySelector('#finish .button').addEventListener('click', finishButton);
     function finishButton() {
-        videoEditor.close();
+        //videoEditor.close();
+        videoEditor.finish(runffmpegEach, [ffDir, ffmpegDir, ffprobeDir]);
         
         document.body.classList.remove('editor');
         document.body.classList.add('editsprogress');
         
-        runffmpeg();
+        //runffmpeg();
+        
+
     }
     //Enter for finish button
     document.addEventListener('keydown', e => {
@@ -349,6 +438,7 @@ addEventListener('load', () => {
             document.getElementById('editor').style.transform = `scale(1, 1)`;
     };
     addEventListener('resize', editorScaleDo);
+    addEventListener('click', () => setTimeout(editorScaleDo, 10));
     
     /* loading edits */
     
@@ -356,187 +446,156 @@ addEventListener('load', () => {
      * https://ffmpeg.org/pipermail/ffmpeg-user/2014-March/020605.html
      * ffmpeg outputs data to stderr
      */
-    
-    //recursive function to run commands
-    function runffmpegCommand(commands, iteration=0, promiseComplete, promiseError) {
-        
+
+    //this has no error handling (must be done by parsing output)
+    function runffmpegEachCommand(command, startpercent, endpercent, part, totalpart) {
+
+        document.querySelector('#progress .progresstext .part').textContent = `${part}/${totalpart}`;
+        if (startpercent === 0) {
+            document.querySelector('#progress .progressbar .progressinner').style.width = '30px';
+            document.querySelector('#progress .progresstext .eta').textContent = 'calculating';
+        }
+
+        //command is array of args
+
         let run = (complete, error) => {
-        
-            //create the command
-            commands[iteration].finish().then(command => {
-                
-                //run the command
-                let ffmpegShell = shell.spawn(ffmpegDir, command);
-                console.log(command);
 
-                //basic data stored that shouldn't be recalculated everytime ffmpeg outputs data
-                let preOutput = document.querySelector('#consoleoutput pre'),
-                    frameCount = Math.floor(videoEditor.data().duration/(1/data.streams.primary.video.framerate));
+            //run the command
+            let ffmpegShell = shell.spawn(ffmpegDir, command);
+            console.log(command);
 
-                //on ffmpeg data output
-                ffmpegShell.stderr.on('data', stdout => {
-                    
-                    //if it's already scrolled to the bottom then keep it scrolled to the bottom
-                    let toScroll = Math.abs(document.querySelector('#consoleoutput pre').scrollTop - (document.querySelector('#consoleoutput pre').scrollHeight - document.querySelector('#consoleoutput pre').getBoundingClientRect().height)) < 25;
+            //basic data stored that shouldn't be recalculated everytime ffmpeg outputs data
+            let preOutput = document.querySelector('#consoleoutput pre'),
+                frameCount = Math.floor(videoEditor.data().duration / (1 / data.streams.primary.video.framerate)),
+                timeAvgs = [],
+                lastTime = null,
+                lastFrame = 0;
 
-                    //output data so user can read it
-                    console.info(stdout.toString());
-                    preOutput.textContent+= '\n'+stdout;
 
-                    if (toScroll)
-                        preOutput.scrollTop = preOutput.scrollHeight;
+            //on ffmpeg data output
+            ffmpegShell.stderr.on('data', stdout => {
 
-                    //calculate percent and display percent in progress bar
-                    if (stdout.toString().match(/frame= *(\d+) fps/g)) {
-                        let currentFrame = parseInt(stdout.toString().match(/frame= *(\d+) fps/)[1]),
-                            percent = Math.max(0, Math.min(100, currentFrame/frameCount));
+                stdout = stdout.toString();
 
-                        percent = mapNumber(percent, 0, 1, 100/commands.length*iteration, 100/commands.length*(iteration+1));
+                //if it's already scrolled to the bottom then keep it scrolled to the bottom
+                let toScroll = Math.abs(document.querySelector('#consoleoutput pre').scrollTop - (document.querySelector('#consoleoutput pre').scrollHeight - document.querySelector('#consoleoutput pre').getBoundingClientRect().height)) < 25;
 
-                        document.querySelector('#progress .progressbar .progressinner').style.width = round(percent, .01)+'%';
+                //output data so user can read it
+                console.info(stdout);
+                preOutput.textContent += '\n' + stdout;
+
+                if (toScroll)
+                    preOutput.scrollTop = preOutput.scrollHeight;
+
+                //calculate percent and display percent in progress bar
+                if (stdout.match(/frame= *(\d+) fps/g)) {
+                    let currentFrame = parseInt(stdout.match(/frame= *(\d+) fps/)[1]),
+                        percent = Math.max(0, Math.min(1, currentFrame / frameCount)),
+                        vidualpercent = mapNumber(percent, 0, 1, startpercent, endpercent),
+                        timeRemaining = 'calculating';
+
+                    if (lastTime === null) {
+                        lastTime = new Date();
+                        lastFrame = currentFrame;
+                    } else {
+                        timeAvgs.push((new Date() - lastTime)/(currentFrame - lastFrame));
+
+                        while (timeAvgs.length > 20)
+                            timeAvgs.shift();
+                        
+                        //calculate average time (in miliseconds) per frame over the last 0-20 stdout events 
+                        let avgPerFrame = 0;
+                        for (let t of timeAvgs)
+                            avgPerFrame += t;
+                        avgPerFrame /= timeAvgs.length;
+
+                        if (avgPerFrame > 0) // if it's less than 0 then idk, it just said -Infinity for some reason
+                            timeRemaining = Math.round(avgPerFrame * (frameCount - currentFrame) / 1000);
+                        
                     }
 
-                });
-                
-                //cancel button
-                let cancelButton = () => {
-                    ffmpegShell.kill('SIGINT')
-                };
-                document.getElementById('returncancel').addEventListener('click', cancelButton);
+                    //needs minimum 30px
+                    //30px is ?%
+                    let minpercent = (document.querySelector('#progress .progressbar').getBoundingClientRect().width - 10) / 30 / 100;
 
-                //on ffmpeg done
-                ffmpegShell.on('close', code => {
-                    console.log(`child process exited with code ${code}`);
-                    
-                    //disable cancel button
-                    document.getElementById('returncancel').removeEventListener('click', cancelButton);
-                    
-                    //recurse if there's another command, otherwise return
-                    if (commands.length-1 > iteration)
-                        runffmpegCommand(commands, iteration+1, complete, error);
-                    else
-                        complete();
-                });
-                
-            }).catch(error);
-            
+                    vidualpercent = mapNumber(vidualpercent, 0, 1, minpercent, 1);
+
+                    document.querySelector('#progress .progressbar .progressinner').style.width = round(vidualpercent * 100, .01) + '%';
+
+                    document.querySelector('#progress .progresstext .part').textContent = `${part}/${totalpart}`;
+                    document.querySelector('#progress .progresstext .eta').textContent = timeRemaining;
+
+                }
+
+            });
+
+            //cancel button
+            let cancelled = false;
+            let cancelButton = () => {
+                ffmpegShell.kill('SIGINT');
+                cancelled = true;
+            };
+            document.getElementById('returncancel').addEventListener('click', cancelButton);
+
+            //on ffmpeg done
+            ffmpegShell.on('close', code => {
+                console.log(`child process exited with code ${code}`);
+
+                //disable cancel button
+                document.getElementById('returncancel').removeEventListener('click', cancelButton);
+
+                //recurse if there's another command, otherwise return
+                complete(cancelled);
+            });
+
         };
-        
-        //if iteration > 0 then this function is already in a promise and shouldn't create a second
-        if (iteration > 0)
-            run(promiseComplete, promiseError);
-        else
-            return new Promise((complete, error) => run(complete, error));
+
+        return new Promise((complete, error) => run(complete, error));
     }
     
-    function runffmpeg() {
+    function runffmpegEach(total) {
         
         blockFile = true;
-        
-        //array of commands
-        let commands = [],
-            commandTemplate = (input, output) => {
-                
-                //basic info
-                let ret = {
-                    input,
-                    output,
-                    audio: false,
-                    video: false,
-                    command: ffmpeg(input.name+input.ext).output(output.name+output.ext)
-                };
-                
-                //use acodec/vcodec copy if needed and prepare the command
-                ret.finish = () => {
-                    return new Promise((complete, fail) => {
-                        
-                        if (!ret.audio)
-                            ret.command.audioCodec('copy');
-                        if (!ret.video)
-                            ret.command.videoCodec('copy');
-                        ret.command._prepare(function(err, args) {
-                            if (err)
-                                fail(err);
-                            else
-                                complete(args);
-                        });
-                        
-                    });
-                };
-                
-                return ret;
-            };
-        
-        //set up main command
-        commands[0] = commandTemplate({
-            name: data.path.dir+'/'+data.path.name,
-            ext: data.path.ext
-        }, {
-            name: data.path.dir+'/'+data.path.name+'_edited',
-            ext: data.path.ext
-        });
-        
-        
-        if (!document.getElementById('fixmic').parentElement.classList.contains('disabled')
-            && document.getElementById('fixmic').checked) { //noise reduction on mic and combine channels
-            
-            commands[0].command.complexFilter([
-                {
-                    filter: 'afftdn', options: {nt:'w',om:'o',tr:''},
-                    inputs: '[0:a:1]', outputs: 'a'
-                },
-                {
-                    filter: 'agate', options: {threshold:'.035'},
-                    inputs: 'a', outputs: 'a'
-                },
-                {
-                    filter: 'amix', options: {inputs:'2'},
-                    inputs: ['[0:a:0]', 'a'], outputs: 'a'
-                }
-            ]).outputOptions('-map', '0:v:0', '-map', '[a]');
-            commands[0].audio = true;
-            
-        } else if (!document.getElementById('onlygame').parentElement.classList.contains('disabled')
-            && document.getElementById('onlygame').checked) //only use game audio
-            
-            commands[0].command.outputOptions('-map', '0:v:0', '-map', '0:a:0');
-        
-        
-        if (document.getElementById('tocompress').checked) {
-            
-            if (document.getElementById('compresssecondfile').checked) { //compress in second file
-                
-                commands[1] = commandTemplate(commands[0].output, {
-                    name: commands[0].output.name+'_compressed',
-                    ext: commands[0].output.ext
+
+        let current = 0,
+            eachPercent = 1/total;
+
+        function eachCommand(args) {
+            return new Promise((complete, error) => {
+
+                runffmpegEachCommand(args, eachPercent * current, eachPercent * (current + 1), current + 1, total).then(() => {
+                    complete();
+                }).catch(err => {
+                    //console.error('error', err);
+                    document.body.classList.remove('editsprogress');
+                    error(err);
                 });
-                commands[1].command.videoBitrate('5000k');
-                
-                commands[1].video = commands[1].audio = true;
-                
-            } else { //compress in same file
-                commands[0].command.videoBitrate('5000k');
-                commands[0].video = true;
-            }
-            
+
+                current++;
+
+            });
         }
-        
-        //set start/end positions
-        if (round.floor(videoEditor.data().trimStartPos, .01) !== 0)
-            commands[0].command.seekInput(videoEditor.data().trimStartPos);
-        if (round.ceil(videoEditor.data().trimEndPos, .01) !== data.duration)
-            commands[0].command.inputOptions('-to '+videoEditor.data().trimEndPos);
-        
-        //run the commands
-        runffmpegCommand(commands).then(() => {
+
+        eachCommand.finish = () => {
             document.querySelector('#progress .progressbar .progressinner').style.width = null;
             document.getElementById('editsprogress').classList.add('finished');
             blockFile = false;
-        }).catch(err => {
-            console.error('error', err);
-            document.body.classList.remove('editsprogress');
-        });
-        
+        };
+
+        //prePrepare(cmd, isfirst, islast);
+        eachCommand.prePrepare = (command, isfirst, islast) => {
+            if (isfirst) {
+
+                //set start/end positions
+
+                if (round.floor(videoEditor.data().trimStartPos, .01) !== 0)
+                    command.seekInput(videoEditor.data().trimStartPos);
+                if (round.ceil(videoEditor.data().trimEndPos, .01) !== round.ceil(data.duration, .01))
+                    command.inputOptions('-to ' + videoEditor.data().trimEndPos);
+            }
+        };
+
+        return eachCommand;
         
     }
     
@@ -579,9 +638,12 @@ function jsonifyerror(msg) {
 }
 
 //general error catch
-addEventListener('error', (msg, url, line, col, error) => {
-    let fixedmsg = jsonifyerror(msg);
+function throwError(err) {
+    let fixedmsg = jsonifyerror(err);
     document.body.classList.add('error');
     document.querySelector('#errordisplay pre').textContent = JSON.stringify(fixedmsg, null, 2);
-    console.log(msg, fixedmsg);
+    console.log(err, fixedmsg);
+}
+addEventListener('error', (msg, url, line, col, error) => {
+    throwError(msg);
 });

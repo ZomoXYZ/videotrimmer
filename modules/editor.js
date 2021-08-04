@@ -1,8 +1,21 @@
-module.exports = (video, onload, error) => {
+const secondsToTime = seconds => { //1000 (seconds) -> 16:40 (minutes:seconds)
+    seconds = Math.floor(seconds);
+    seconds = Math.max(0, seconds);
+    var minutes = Math.floor(seconds / 60);
+    seconds = seconds - (minutes * 60);
+
+    if (minutes < 10) { minutes = "0" + minutes; }
+    if (seconds < 10) { seconds = "0" + seconds; }
+    return minutes + ':' + seconds;
+};
+
+module.exports = (video, onload, error, settings) => {
     /*
      * video: video html element
      * error: callback function in case of error
      */
+
+    const editorOptions = require('./editorOptions.js')(settings);
     
     //base definitions
     var videoPos = 0,
@@ -16,13 +29,14 @@ module.exports = (video, onload, error) => {
         
         isOpen = false,
         
-        videoData = {};
+        videoData = {},
+        videoSrc = null;
     
     //calculate where the positions of each point should be in each bar
     function calculatePositionBar() {
         if (isOpen && !videoPositionDragging && !trimStartDragging && !trimEndDragging && !volumeDragging) {
             
-            console.log(trimStartPos, trimEndPos);
+            //console.log(trimStartPos, trimEndPos);
             
             if (video.currentTime >= trimEndPos && !video.paused)
                 video.pause();
@@ -48,10 +62,7 @@ module.exports = (video, onload, error) => {
     
     //error catching
     video.addEventListener('error', () => {
-        console.error(video.error);
-        error(video.error)
-        document.body.classList.remove('processing');
-        document.body.classList.add('error');
+        error(video.error);
     });
     
     //on video load
@@ -257,18 +268,22 @@ module.exports = (video, onload, error) => {
             isOpen = true;
             
         },
-        src: (src, data) => {
-            video.setAttribute('src', src);
+        src: (data) => {
+            videoSrc = data.path;
+            video.setAttribute('src', path.format(data.path));
+            editorOptions.generate(data);
             videoData = data;
         },
-        close: () => {
+        finish: (runFFMPEG, ffDirs) => {
             video.pause();
             isOpen = false;
+            editorOptions.finish(videoSrc, runFFMPEG, ffDirs, trimEndPos - trimStartPos);
         },
         data: () => {
             return { trimStartPos, trimEndPos, duration: trimEndPos-trimStartPos };
         },
-        onload: func => {onload = func;}
+        onload: func => {onload = func;},
+        
     };
     
 };

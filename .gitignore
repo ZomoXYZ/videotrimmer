@@ -1,4 +1,8 @@
 node_modules
 dist
 package-lock.json
+yarn.lock
 *.tgz
+issues
+gh_publish.sh
+.vscode

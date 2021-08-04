@@ -1,42 +1,86 @@
 @font-face {
-  font-family: OpenSans-Bold;
+  font-family: OpenSans;
   src: url(./resources/Open_Sans/OpenSans-Bold.ttf);
+  font-weight: bold;
+  font-style: normal;
 }
 @font-face {
-  font-family: OpenSans-BoldItalic;
+  font-family: OpenSans;
   src: url(./resources/Open_Sans/OpenSans-BoldItalic.ttf);
+  font-weight: bold;
+  font-style: italic;
 }
 @font-face {
-  font-family: OpenSans-ExtraBold;
+  font-family: OpenSans;
   src: url(./resources/Open_Sans/OpenSans-ExtraBold.ttf);
+  font-weight: bolder;
+  font-style: normal;
 }
 @font-face {
-  font-family: OpenSans-ExtraBoldItalic;
+  font-family: OpenSans;
   src: url(./resources/Open_Sans/OpenSans-ExtraBoldItalic.ttf);
+  font-weight: bolder;
+  font-style: italic;
 }
 @font-face {
-  font-family: OpenSans-Italic;
+  font-family: OpenSans;
   src: url(./resources/Open_Sans/OpenSans-Italic.ttf);
+  font-weight: normal;
+  font-style: italic;
 }
 @font-face {
-  font-family: OpenSans-Light;
+  font-family: OpenSans;
   src: url(./resources/Open_Sans/OpenSans-Light.ttf);
+  font-weight: lighter;
+  font-style: normal;
 }
 @font-face {
-  font-family: OpenSans-LightItalic;
+  font-family: OpenSans;
   src: url(./resources/Open_Sans/OpenSans-LightItalic.ttf);
+  font-weight: lighter;
+  font-style: italic;
 }
 @font-face {
-  font-family: OpenSans-Regular;
+  font-family: OpenSans;
   src: url(./resources/Open_Sans/OpenSans-Regular.ttf);
+  font-weight: normal;
+  font-style: normal;
 }
 @font-face {
-  font-family: OpenSans-SemiBold;
+  font-family: OpenSans;
   src: url(./resources/Open_Sans/OpenSans-SemiBold.ttf);
+  font-weight: 600;
+  font-style: normal;
 }
 @font-face {
-  font-family: OpenSans-SemiBoldItalic;
+  font-family: OpenSans;
   src: url(./resources/Open_Sans/OpenSans-SemiBoldItalic.ttf);
+  font-weight: 600;
+  font-style: italic;
+}
+@font-face {
+  font-family: OpenDyslexic;
+  src: url(./resources/OpenDyslexic2/OpenDyslexic-Bold.otf);
+  font-weight: bold;
+  font-style: normal;
+}
+@font-face {
+  font-family: OpenDyslexic;
+  src: url(./resources/OpenDyslexic2/OpenDyslexic-BoldItalic.otf);
+  font-weight: bold;
+  font-style: italic;
+}
+@font-face {
+  font-family: OpenDyslexic;
+  src: url(./resources/OpenDyslexic2/OpenDyslexic-Italic.otf);
+  font-weight: normal;
+  font-style: italic;
+}
+@font-face {
+  font-family: OpenDyslexic;
+  src: url(./resources/OpenDyslexic2/OpenDyslexic-Regular.otf);
+  font-weight: normal;
+  font-style: normal;
 }
 [theme=light] {
   --background: #fff;
@@ -56,30 +100,56 @@
   --button-active-bg: #555;
 }
 
+[contrast] {
+  filter: contrast(1.5);
+}
+
+[invert] {
+  filter: invert(1);
+}
+
+[contrast][invert] {
+  filter: contrast(1.5) invert(1);
+}
+
 html {
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
 }
 
-* {
-  font-family: OpenSans-Regular;
-  user-select: none;
-  transition: color 200ms ease-in-out, background 200ms ease-in-out;
-  box-sizing: inherit;
-}
-*:before, *:after {
-  box-sizing: inherit;
-}
-
 body {
+  --font-size: 24px;
+  --font-family: OpenSans;
+  font-family: var(--font-family);
+  user-select: none;
   margin: 0;
   width: 100%;
   height: 100%;
   overflow: hidden;
   cursor: default;
-  font-size: 24px;
-  background: var(--background);
+  font-size: var(--font-size);
   color: var(--color);
+  transition: color 200ms ease-in-out;
+  box-sizing: inherit;
+}
+body[dyslexic] {
+  --font-size: 20px;
+  --font-family: OpenDyslexic;
+}
+body *::before,
+body *::after {
+  box-sizing: inherit;
+}
+body::after {
+  content: "";
+  background: var(--background);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  transition: background 200ms ease-in-out;
 }
 body > div {
   transition: opacity 150ms ease-in;
@@ -92,6 +162,8 @@ body > div {
   left: 0;
   width: 100%;
   height: 100%;
+  box-sizing: border-box;
+  padding: 0 15px;
 }
 
 /* order:
@@ -99,6 +171,7 @@ body > div {
  * general
  * 
  * upload screen
+ * settings screen
  * loading screen
  * processing video
  * editing page
@@ -125,9 +198,10 @@ body > div {
   display: none;
 }
 
+/* checkbox */
 /* https://codepen.io/aaroniker/pen/PowZbgb */
 .checkbox > label {
-  --background: var(--color);
+  --cb-background: var(--color);
   --border: transparent;
   --border-hover: var(--button-hover-bg);
   --border-active: var(--button-background);
@@ -138,13 +212,12 @@ body > div {
   --stroke: var(--tick);
 }
 [theme=light] .checkbox > label {
-  --background: #bbb;
+  --cb-background: #bbb;
 }
 .checkbox > label.smaller {
   transform: scale(0.7);
 }
-.checkbox > label input,
-.checkbox > label svg {
+.checkbox > label input, .checkbox > label svg {
   width: 21px;
   height: 21px;
   display: block;
@@ -154,7 +227,7 @@ body > div {
   -moz-appearance: none;
   position: relative;
   outline: none;
-  background: var(--background);
+  background: var(--cb-background);
   border: none;
   margin: 0;
   margin-right: 5px;
@@ -179,7 +252,7 @@ body > div {
   stroke-linejoin: round;
   stroke: var(--stroke, var(--border-active));
   position: absolute;
-  top: 1px;
+  /*top: 1px;*/
   left: 0;
   width: 21px;
   height: 21px;
@@ -202,10 +275,147 @@ body > div {
   transition: color 200ms ease-in-out;
 }
 
-/*upload screen*/
+/*toggle*/
+.toggle > label {
+  --toggle-background: var(--color);
+  --border: var(--button-hover-bg);
+  --thumb-background: var(--button-background);
+  --active-width: 5px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+[theme=light] .toggle > label {
+  --cb-background: #bbb;
+}
+.toggle > label div {
+  display: inline-block;
+}
+.toggle > label input {
+  display: none;
+}
+.toggle > label .slider {
+  height: 21px;
+  width: 42px;
+  margin-right: 5px;
+  border-radius: 100px;
+  background: var(--toggle-background);
+  overflow: hidden;
+  display: flex;
+  align-content: center;
+}
+.toggle > label .slider .thumb {
+  width: 21px;
+  height: 21px;
+  margin-left: 0px;
+  box-shadow: 0 0 5px black;
+  border-radius: 100%;
+  background: var(--thumb-background);
+  border-left: 2px solid var(--border);
+  border-right: 0px solid var(--border);
+  transition: margin 0.2s ease-in-out, border-width 0.2s ease-in-out, width 0.2s ease-in-out;
+}
+.toggle > label input:checked + .slider .thumb {
+  margin-left: 21px;
+  border-left: 0px solid var(--border);
+  border-right: 2px solid var(--border);
+}
+.toggle > label.reverse .slider {
+  margin-right: 0;
+  margin-left: 5px;
+}
+.toggle > label.reverse span {
+  order: -1;
+}
+.toggle > label:active input:not([disabled]) + .slider .thumb {
+  width: calc(21px + var(--active-width));
+}
+.toggle > label:active input:not([disabled]):checked + .slider .thumb {
+  margin-left: calc(21px - var(--active-width));
+}
+.toggle > label span {
+  transition: color 200ms ease-in-out;
+}
+.toggle > label input:disabled + .slider {
+  background: var(--thumb-background);
+}
+.toggle > label input:disabled + .slider .thumb {
+  background: var(--thumb-background);
+  box-shadow: none;
+  border: none;
+}
+
+/* dropdown */
+.dropdown > label {
+  --dd-background: var(--color);
+  --border: transparent;
+  --border-hover: var(--button-hover-bg);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+[theme=light] .dropdown > label {
+  --dd-background: #bbb;
+}
+.dropdown > label input,
+.dropdown > label svg {
+  width: 21px;
+  height: 21px;
+  display: block;
+}
+.dropdown > label select {
+  -webkit-appearance: none;
+  position: relative;
+  outline: none;
+  background: var(--dd-background);
+  font-size: 14px;
+  height: 21px;
+  border: none;
+  margin: 0;
+  margin-left: 5px;
+  padding: 0 7px;
+  border-radius: 4px;
+  transition: box-shadow 0.3s, background 200ms ease-in-out;
+  box-shadow: inset 0 0 0 var(--s, 1px) var(--b, var(--border));
+  display: inline-block;
+}
+.dropdown > label select:hover {
+  --s: 2px;
+  --b: var(--border-hover);
+}
+.dropdown > label select:disabled {
+  background: var(--border-hover);
+  color: var(--border-hover);
+}
+.dropdown > label select:disabled ~ span {
+  color: var(--border-hover);
+}
+.dropdown > label span {
+  order: -1;
+  transition: color 200ms ease-in-out;
+}
+
+[dyslexic] .dropdown > label select {
+  font-family: var(--font-family);
+  font-size: 12px;
+}
+
+/*upload screen / defaults*/
 #uploadVideo {
   opacity: 1;
   pointer-events: all;
+}
+
+#settings {
+  opacity: 0;
+  pointer-events: none;
+}
+#settings .section {
+  border-bottom: 1px solid black;
+  width: 100%;
+}
+#settings .section:last-child {
+  border-bottom: none;
 }
 
 #loadingMain {
@@ -249,13 +459,62 @@ body > div {
 }
 #version.update:after {
   content: "update available";
-  font-family: "OpenSans-Bold";
+  font-weight: bold;
   padding-left: 5px;
   opacity: 0.5;
 }
 
+#settingsButton {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  padding: 4px;
+}
+#settingsButton svg {
+  fill: var(--color);
+  width: 22px;
+}
+
+/*settings screen*/
+.settings #uploadVideo {
+  opacity: 0;
+  pointer-events: none;
+}
+.settings #settings {
+  opacity: 1;
+  pointer-events: all;
+}
+.settings #loadingMain {
+  opacity: 0;
+  pointer-events: none;
+}
+.settings #processingVideo {
+  opacity: 0;
+  pointer-events: none;
+}
+.settings #editor {
+  opacity: 0;
+  pointer-events: none;
+}
+.settings #editsprogress {
+  opacity: 0;
+  pointer-events: none;
+}
+.settings #error {
+  opacity: 0;
+  pointer-events: none;
+}
+.settings #hoveringVideo {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /*loading screen*/
 .loadingMain #uploadVideo {
+  opacity: 0;
+  pointer-events: none;
+}
+.loadingMain #settings {
   opacity: 0;
   pointer-events: none;
 }
@@ -289,6 +548,10 @@ body > div {
   opacity: 0;
   pointer-events: none;
 }
+.processing #settings {
+  opacity: 0;
+  pointer-events: none;
+}
 .processing #loadingMain {
   opacity: 0;
   pointer-events: none;
@@ -316,6 +579,10 @@ body > div {
 
 /*editing page*/
 .editor #uploadVideo {
+  opacity: 0;
+  pointer-events: none;
+}
+.editor #settings {
   opacity: 0;
   pointer-events: none;
 }
@@ -492,6 +759,10 @@ body > div {
   opacity: 0;
   pointer-events: none;
 }
+.editsprogress #settings {
+  opacity: 0;
+  pointer-events: none;
+}
 .editsprogress #loadingMain {
   opacity: 0;
   pointer-events: none;
@@ -518,11 +789,12 @@ body > div {
 }
 
 #editsprogress #progress {
-  width: 100%;
+  width: 75%;
   height: 20%;
   display: flex;
   justify-content: center;
   align-items: center;
+  flex-direction: column;
   /* https://codepen.io/traf/pen/oKbaqQ */
 }
 #editsprogress #progress .progressbar {
@@ -534,7 +806,7 @@ body > div {
   padding: 0 5px;
   display: flex;
   height: 40px;
-  width: 75%;
+  width: 100%;
   transition: width 250ms ease-out, height 250ms ease-out;
 }
 #editsprogress #progress .progressbar .progressinner {
@@ -546,6 +818,22 @@ body > div {
   width: 0%;
   transition: width 250ms ease-in-out, height 250ms ease-out;
 }
+#editsprogress #progress .progresstext {
+  width: 100%;
+}
+#editsprogress #progress .progresstext > span {
+  display: inline-block;
+  font-size: 16px;
+}
+#editsprogress #progress .progresstext > span.part {
+  float: left;
+}
+#editsprogress #progress .progresstext > span.eta {
+  float: right;
+}
+#editsprogress #progress .progresstext > span.eta::after {
+  content: " secs remaining";
+}
 #editsprogress #return {
   height: 15%;
 }
@@ -556,12 +844,15 @@ body > div {
   display: none;
 }
 #editsprogress.finished #progress .progressbar {
-  width: 60px;
+  width: 50px;
   height: 60px;
 }
 #editsprogress.finished #progress .progressbar .progressinner {
   width: 100%;
   height: 50px;
+}
+#editsprogress.finished #progress .progresstext {
+  display: none;
 }
 #editsprogress.finished #return #returncancel {
   display: none;
@@ -596,6 +887,10 @@ body > div {
   opacity: 0;
   pointer-events: none;
 }
+.error #settings {
+  opacity: 0;
+  pointer-events: none;
+}
 .error #loadingMain {
   opacity: 0;
   pointer-events: none;
@@ -625,7 +920,7 @@ body > div {
   display: flex;
 }
 #error .bold {
-  font-family: OpenSans-Bold;
+  font-weight: bold;
   font-size: 48px;
   text-align: center;
 }
@@ -645,6 +940,7 @@ body > div {
 #error #errordisplay {
   width: 100%;
   flex-grow: 1;
+  overflow-y: scroll;
   padding: 15px;
 }
 #error #errordisplay pre {
@@ -668,6 +964,10 @@ body > div {
 .hoveringVideo #uploadVideo {
   opacity: 0;
   pointer-events: all;
+}
+.hoveringVideo #settings {
+  opacity: 0;
+  pointer-events: none;
 }
 .hoveringVideo #loadingMain {
   opacity: 0;

@@ -1,0 +1,49 @@
+appId: "dev.zomo.videotrimmer"
+productName: "Videotrimmer"
+artifactName: "${productName}-${os}-${version}.${ext}"
+
+files:
+  - "index.html"
+  - "index.css"
+  - "index.css.map"
+  - "index.js"
+  - "main.js"
+  - "resources/**/*"
+  - "resources/**/*"
+  - "modules/*"
+
+mac:
+  category: "public.app-category.utilities"
+  darkModeSupport: true
+  icon: null
+  target:
+    - "dmg"
+    - "zip"
+  publish: "github"
+
+dmg:
+  backgroundColor: "#434442"
+  contents:
+    - x: 110
+      y: 150
+    - x: 240
+      y: 150
+      type: "link"
+      path: "/Applications"
+
+win:
+  icon: null
+  target:
+    - "portable"
+    - "nsis"
+  publish: "github"
+
+nsis:
+  deleteAppDataOnUninstall: true
+
+linux:
+  icon: null
+  target:
+    - "AppImage"
+    - "deb"
+  publish: "github"

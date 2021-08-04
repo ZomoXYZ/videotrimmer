@@ -1,56 +1,20 @@
 {
     "name": "videotrimmer",
-    "version": "0.4.2",
+    "version": "1.0.0",
     "license": "MIT",
     "description": "easy video trimmer",
     "author": {
         "name": "ashley",
         "email": "ashley@funny.bike"
     },
-    "build": {
-        "appId": "videotrimmer",
-        "files": [
-            "index.html",
-            "index.css",
-            "index.css.map",
-            "index.js",
-            "main.js",
-            "resources/Open_Sans/*",
-            "modules/*"
-        ],
-        "dmg": {
-            "contents": [
-                {
-                    "x": 110,
-                    "y": 150
-                },
-                {
-                    "x": 240,
-                    "y": 150,
-                    "type": "link",
-                    "path": "/Applications"
-                }
-            ]
-        },
-        "linux": {
-            "target": [
-                "AppImage",
-                "deb"
-            ]
-        },
-        "win": {
-            "target": "NSIS"
-        }
-    },
     "main": "main.js",
     "scripts": {
         "start": "electron .",
-        "pack": "electron-builder --dir",
-        "dist": "electron-builder"
+        "build": "electron-builder build"
     },
     "repository": {
-      "type": "git",
-      "url": "https://github.com/ZomoXYZ/videotrimmer.git"
+        "type": "git",
+        "url": "git+https://github.com/ZomoXYZ/videotrimmer.git"
     },
     "keywords": [
         "video",
@@ -61,16 +25,19 @@
         "nvidia-shadowplay"
     ],
     "bugs": {
-      "url": "https://github.com/ZomoXYZ/videotrimmer/issues"
+        "url": "https://github.com/ZomoXYZ/videotrimmer/issues"
     },
-    "homepage": "https://github.com/ZomoXYZ/videotrimmer",
+    "homepage": "https://github.com/ZomoXYZ/videotrimmer#readme",
     "devDependencies": {
-        "electron": "^9.2.0",
-        "electron-builder": "^22.8.0"
+        "electron": "^13.1.8",
+        "electron-builder": "^22.11.7"
     },
     "dependencies": {
+        "electron-log": "^4.4.1",
+        "electron-updater": "^4.3.9",
         "ffbinaries": "^1.1.4",
         "fluent-ffmpeg": "^2.1.2",
-        "mime": "^2.4.6"
+        "mime": "^2.5.2",
+        "rimraf": "^3.0.2"
     }
 }
