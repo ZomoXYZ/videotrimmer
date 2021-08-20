@@ -51,20 +51,22 @@ module.exports = {
                 let audioInfo = {};
 
                 shellout.forEach(l => {
-                    let lineinfo = l.match(/\[.*?\] (.*$)/)[1].split(/:\s*/);
-                    audioInfo[lineinfo[0]] = lineinfo[1];
+                    if (/\[.*?\] (.*)(?:$|\r)/.test(lineinfo)) {
+                        let lineinfo = l.match(/\[.*?\] (.*)(?:$|\r)/)[1].split(/:\s*/);
+                        audioInfo[lineinfo[0]] = lineinfo[1];
+                    }
                 });
 
                 if ('max_volume' in audioInfo) {
                     let maxVolume = parseFloat(audioInfo['max_volume']),
                         volumeChange = -0.1 - maxVolume; // -0.1 offset so max isn't at 0dB exactly
 
-                    console.log(`Normalizing Audio (${volumeChange}dB)`)
+                    console.log(`Normalizing Audio (${volumeChange}dB)`);
                     
                     if (volumeChange === 0)
                         return ffmpeg;
                     
-                    return ffmpeg.audioFilters(`volume=${volumeChange}dB`);;
+                    return ffmpeg.audioFilters(`volume=${volumeChange}dB`);
                     
                 }
 
