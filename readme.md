@@ -10,6 +10,12 @@
 
 ## changelog
 
+### v1.0.1
+
+**changes**
+
+- fixed critical bug in normalize audio function
+
 ### v1.0.0
 
 **changes**
