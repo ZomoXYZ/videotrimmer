@@ -51,14 +51,14 @@ module.exports = {
                 let audioInfo = {};
 
                 shellout.forEach(l => {
-                    if (/\[.*?\] (.*)(?:$|\r)/.test(lineinfo)) {
+                    if (/\[.*?\] (.*)(?:$|\r)/.test(l)) {
                         let lineinfo = l.match(/\[.*?\] (.*)(?:$|\r)/)[1].split(/:\s*/);
                         audioInfo[lineinfo[0]] = lineinfo[1];
                     }
                 });
 
                 if ('max_volume' in audioInfo) {
-                    let maxVolume = parseFloat(audioInfo['max_volume']),
+                    let maxVolume = parseFloat(audioInfo.max_volume),
                         volumeChange = -0.1 - maxVolume; // -0.1 offset so max isn't at 0dB exactly
 
                     console.log(`Normalizing Audio (${volumeChange}dB)`);
@@ -94,7 +94,7 @@ module.exports = {
                     
                     let br = 0;
 
-                    console.log(size, info.data.streams.primary.video.framerate)
+                    console.log(size, info.data.streams.primary.video.framerate);
 
                     //https://support.google.com/youtube/answer/1722171#zippy=%2Cbitrate
                     if (info.data.streams.primary.video.framerate <= 30) {
@@ -122,7 +122,7 @@ module.exports = {
                         else if (size <= 1440)
                             br = 24;
                         else
-                            br = 55
+                            br = 55;
                     }
 
                     bitrate = br*1e3;
@@ -148,7 +148,7 @@ module.exports = {
 
                         max *= 1.024; //kibibyte to kilobyte
 
-                        max *= .95; //95% of max, giving a buffer
+                        max *= 0.95; //95% of max, giving a buffer
                         // ^ make this buffer changable under advanced options
                         max *= 1e3;
 

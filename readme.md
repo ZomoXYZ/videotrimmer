@@ -10,6 +10,12 @@
 
 ## changelog
 
+### v1.0.2
+
+**changes**
+
+- I'm dumb
+
 ### v1.0.1
 
 **changes**
