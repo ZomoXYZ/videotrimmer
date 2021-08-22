@@ -40,6 +40,7 @@ win:
 
 nsis:
   deleteAppDataOnUninstall: true
+  artifactName: "${productName}-${os}-installer-${version}.${ext}"
 
 linux:
   icon: null
