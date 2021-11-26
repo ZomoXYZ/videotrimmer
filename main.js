@@ -4,13 +4,13 @@ const {app, BrowserWindow, ipcMain, Tray, nativeImage} = require('electron'),
     { autoUpdater } = require("electron-updater"),
     AppName = require('./package.json').name;
 
-autoUpdater.logger = require("electron-log");
+/*autoUpdater.logger = require("electron-log");
 autoUpdater.logger.transports.file.level = "info";
 autoUpdater.allowPrerelease = true;
 autoUpdater.setFeedURL({
     provider: "generic",
     url: "https://gitlab.com/_example_repo_/-/jobs/artifacts/master/raw/dist?job=build"
-});
+});*/
 
 var IsLoaded = false;
 
@@ -27,9 +27,12 @@ ipcMain.on('devtools', event => { //is there a way to do this without ipc?
     });
 });
 
-ipcMain.on('isLoaded', (event, arg) => {
+let dataRequested = false;
+
+ipcMain.on('getData', (event, arg) => {
+    dataRequested = true;
     if (IsLoaded)
-        mainWindow.webContents.send('loaded', getAppDataPath());
+        mainWindow.webContents.send('data', getAppDataPath());
 });
 
 function getAppDataPath() {
@@ -96,8 +99,9 @@ function createWindow() {
     
     downloadFfmpeg().then(() => {
         IsLoaded = true;
-        console.log(getAppDataPath())
-        mainWindow.webContents.send('loaded', getAppDataPath());
+        console.log(getAppDataPath());
+        if (dataRequested)
+            mainWindow.webContents.send('data', getAppDataPath());
     });
     
 }
