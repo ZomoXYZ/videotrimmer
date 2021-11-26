@@ -28,13 +28,15 @@ const mapNumber = (num, in_min, in_max, out_min, out_max) => {
 //prevent zooming
 webFrame.setVisualZoomLevelLimits(1, 1);
 
-var gotData = null,
+var gotData = false,
     domLoaded = false;
 
 //on ffmpeg downloaded
 ipcRenderer.on('data', (event, data) => {
     
-    gotData = data;
+    appDataPath = data;
+    
+    gotData = true;
 
     if (domLoaded)
         main();
@@ -46,7 +48,7 @@ addEventListener('load', () => {
 
     domLoaded = true;
 
-    if (gotData !== null)
+    if (gotData)
         main();
 
 });
@@ -74,11 +76,10 @@ function updateTheme() {
 function main() {
 
     //ffmpeg binaries https://ffbinaries.com/downloads
-    appDataPath = gotData;
-    ffDir = path.join(data, 'ffmpeg-binaries');
+    ffDir = path.join(appDataPath, 'ffmpeg-binaries');
     ffmpegDir = path.join(ffDir, 'ffmpeg');
     ffprobeDir = path.join(ffDir, 'ffprobe');
-    settingsPath = path.join(data, 'storage');
+    settingsPath = path.join(appDataPath, 'storage');
 
     //in case an error happened in main.js
     if (!fs.existsSync(ffDir))
