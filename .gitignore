@@ -6,3 +6,4 @@ yarn.lock
 issues
 gh_publish.sh
 .vscode
+.DS_Store
