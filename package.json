@@ -1,11 +1,11 @@
 {
     "name": "videotrimmer",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "license": "MIT",
     "description": "easy video trimmer",
     "author": {
-        "name": "ashley",
-        "email": "ashley@funny.bike"
+        "name": "ashley zomo",
+        "email": "ashleyzomo@gmail.com"
     },
     "main": "main.js",
     "scripts": {
