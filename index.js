@@ -119,15 +119,8 @@ function main() {
     //aaaaaah
     ffmpeg.setFfmpegPath(ffmpegDir);
 
-    if (['complete', 'interactive'].includes(document.readyState)) {
-        document.body.classList.remove('loadingMain');
-        blockFile = false;
-    }
-
-    if (MainReady) {
-        document.body.classList.remove('loadingMain');
-        blockFile = false;
-    }
+    document.body.classList.remove('loadingMain');
+    blockFile = false;
 
     //declarations outside of page scope
     const videoEditor = require('./modules/editor.js')(document.querySelector('#editor video'), () => {

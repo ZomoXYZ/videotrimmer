@@ -29,7 +29,7 @@ ipcMain.on('devtools', event => { //is there a way to do this without ipc?
 
 let dataRequested = false;
 
-ipcMain.on('getData', (event, arg) => {
+ipcMain.on('getData', () => {
     dataRequested = true;
     if (IsLoaded)
         mainWindow.webContents.send('data', getAppDataPath());
