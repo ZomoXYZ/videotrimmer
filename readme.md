@@ -10,6 +10,17 @@
 
 ## changelog
 
+### v1.0.3
+
+**changes**
+
+- changed how temp files work
+  - temp folders are now per-video rather than in the application folder
+
+**fixes**
+
+- issue where variables could be read before defined
+
 ### v1.0.2
 
 **changes**
