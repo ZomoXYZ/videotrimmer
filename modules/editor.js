@@ -30,7 +30,8 @@ module.exports = (video, onload, error, settings) => {
         isOpen = false,
         
         videoData = {},
-        videoSrc = null;
+        videoSrc = null,
+        tmpDir = null;
     
     //calculate where the positions of each point should be in each bar
     function calculatePositionBar() {
@@ -251,6 +252,20 @@ module.exports = (video, onload, error, settings) => {
             keysHolding[e.key]();
         }
     });
+
+    //generate temp directory
+    function genTempDir(videoDir) {
+
+        let tempdir = path.join(videoDir.dir, videoDir.name + '.tmp/');
+
+        if (!fs.existsSync(tempdir))
+            fs.mkdirSync(tempdir);
+
+        if (!fs.lstatSync(tempdir).isDirectory())
+            throw `File ${tempdir} exists and is not a directory`;
+
+        return tempdir;
+    }
     
     //interact with index.js
     return {
@@ -269,6 +284,9 @@ module.exports = (video, onload, error, settings) => {
             
         },
         src: (data) => {
+            if (!videoSrc)
+                tmpDir = genTempDir(data.path);
+
             videoSrc = data.path;
             video.setAttribute('src', path.format(data.path));
             editorOptions.generate(data);
@@ -277,7 +295,7 @@ module.exports = (video, onload, error, settings) => {
         finish: (runFFMPEG, ffDirs) => {
             video.pause();
             isOpen = false;
-            editorOptions.finish(videoSrc, runFFMPEG, ffDirs, trimEndPos - trimStartPos);
+            editorOptions.finish(videoSrc, tmpDir, runFFMPEG, ffDirs, trimEndPos - trimStartPos);
         },
         data: () => {
             return { trimStartPos, trimEndPos, duration: trimEndPos-trimStartPos };

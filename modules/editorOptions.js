@@ -1,6 +1,7 @@
 const fluentFFMPEG = require('fluent-ffmpeg'),
     path = require('path'),
     fs = require('fs'),
+    rimraf = require('rimraf'),
     fsPromise = fs.promises,
     shell = require('child_process').spawnSync,
     options = require('./rawEditorOptions.js');
@@ -293,36 +294,27 @@ module.exports = settings => {
     //custom fluentFFMPEG wrapper
     class ffmpegWrapper {
 
-        constructor(infile, ffDirs) {// path, path, [ffDir, ffmpegDir, ffprobeDir]
+        constructor(infile, ffdirs, tempdir) {// path, path, [ffDir, ffmpegDir, ffprobeDir]
             this.audio = false;
             this.video = false;
             this.commands = [];
-            this.ffDirs = ffDirs;
+            this.ffdirs = ffdirs;
+            this.tempdir = tempdir;
             this.temps = [];
         }
-
+        
         genTemp(ext) {
-            
-            let tempdir = path.join(this.ffDirs[0], 'temp');
-
-            if (!fs.existsSync(tempdir))
-                fs.mkdirSync(tempdir);
-
-            if (!fs.lstatSync(tempdir).isDirectory()) {
-                fs.unlinkSync(tempdir);
-                fs.mkdirSync(tempdir);
-            }
 
             let genFname = () => {
                 let chars = randomChars(20);
-                if (fs.existsSync(path.join(tempdir, chars+ext)))
+                if (fs.existsSync(path.join(this.tempdir, chars + ext)))
                     return genFname();
                 return chars;
             };
 
             let tempfname = genFname();
 
-            let ret = path.parse(path.join(tempdir, tempfname + ext));
+            let ret = path.parse(path.join(this.tempdir, tempfname + ext));
 
             ret.isTemp = true;
 
@@ -331,12 +323,15 @@ module.exports = settings => {
             return ret;
         }
 
-        clearTemp() {
-            for (let i = 0; i < this.temps.length; i++) {
-                let p = path.format(this.temps[i])
-                if (fs.existsSync(p))
-                    fs.unlinkSync(p);
-            }
+        clearTemp(single) {
+            if (single)
+                for (let i = 0; i < this.temps.length; i++) {
+                    let p = path.format(this.temps[i])
+                    if (fs.existsSync(p))
+                        fs.unlinkSync(p);
+                }
+            else
+                rimraf(this.tempdir, () => {});
         }
 
         newCommand(fname, ffmpeg) {// path, fluentFFMPEG
@@ -349,14 +344,14 @@ module.exports = settings => {
         }
 
         rawffmpeg(args) {// array
-            return shell(this.ffDirs[1], args);
+            return shell(this.ffdirs[1], args);
         }
 
         rawffprobe(args) {// array
-            return shell(this.ffDirs[2], args);
+            return shell(this.ffdirs[2], args);
         }
 
-        fullcommand(f, val, isfirst, islast, infname, prePrepare, referencePath) {// function(fluentFFMPEG, video info + commands, input value), input value
+        fullcommand(f, val, isfirst, islast, infname, tempdir, prePrepare, referencePath) {// function(fluentFFMPEG, video info + commands, input value), input value
 
             return new Promise((complete, fail) => {
 
@@ -442,11 +437,11 @@ module.exports = settings => {
 
     return {
         generate: data => generateOptions(data), //create html for options from rawEditorOptions.js
-        finish: (videoSrc, runFFMPEG, ffDirs, trimmedDur) => {
+        finish: (videoSrc, tmpDir, runFFMPEG, ffdirs, trimmedDur) => {
             trimmedDuration = trimmedDur;
 
-            //var ffmpeg = new ffmpegWrapper(videoSrc, path.parse(`${videoSrc.dir}/${videoSrc.name}_edited${videoSrc.ext}`), ffDirs);
-            var ffmpeg = new ffmpegWrapper(videoSrc, ffDirs),
+            //var ffmpeg = new ffmpegWrapper(videoSrc, path.parse(`${videoSrc.dir}/${videoSrc.name}_edited${videoSrc.ext}`), ffdirs);
+            var ffmpeg = new ffmpegWrapper(videoSrc, ffdirs, tmpDir),
                 allRunFuncs = [];
 
             for (let id in options.basic) {
@@ -500,7 +495,7 @@ module.exports = settings => {
                     if (lastNontempPath === null || (infname && !infname.isTemp))
                         lastNontempPath = infname;
 
-                    let args = [i === 0, i === allRunFuncs.length - 1, infname, runFFMPEG.prePrepare, lastNontempPath];
+                    let args = [i === 0, i === allRunFuncs.length - 1, infname, tmpDir, runFFMPEG.prePrepare, lastNontempPath];
 
                     ffmpeg.fullcommand(...allRunFuncs[i], ...args).then(([args, tempfname, outfname]) => {
                         runFFMPEG(args).then(cancelled => {
@@ -510,7 +505,7 @@ module.exports = settings => {
                                 eachOption(i + 1, tempfname);
                             } else {
                                 runFFMPEG.finish();
-                                ffmpeg.clearTemp(true);
+                                ffmpeg.clearTemp();
                             }
                         }).catch(err => {
                             ffmpeg.clearTemp();

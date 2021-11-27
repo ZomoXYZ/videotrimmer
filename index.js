@@ -260,21 +260,6 @@ function main() {
         settings.dyslexic = e.target.checked;
     }, false);
 
-    document.getElementById('deletetemp').addEventListener('click', () => {
-        document.body.classList.remove('settings');
-        document.body.classList.add('loadingMain');
-
-        setTimeout(() => {
-            let tempDir = path.join(ffDir, 'temp');
-            if (fs.existsSync(tempDir)) {
-                rimraf.sync(path.join(ffDir, 'temp'));
-                fs.mkdirSync(tempDir)
-            }
-            document.body.classList.remove('loadingMain');
-            document.body.classList.add('settings');
-        }, 200);
-    }, false);
-
     document.getElementById('deleteall').addEventListener('click', () => {
         document.body.classList.remove('settings');
         document.body.classList.add('loadingMain');
