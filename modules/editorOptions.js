@@ -32,7 +32,7 @@ module.exports = settings => {
         outfileMod.base = outfileMod.name + outfileMod.ext;
 
         if (fs.existsSync(path.format(outfileMod)))
-            return copyFile(infile, outfileMod, i+1);
+            return copyFile(infile, outfile, i+1);
 
         return fsPromise.copyFile(path.format(infile), path.format(outfileMod));
         
@@ -305,6 +305,9 @@ module.exports = settings => {
         
         genTemp(ext) {
 
+            if (!fs.existsSync(this.tempdir))
+                fs.mkdirSync(this.tempdir);
+
             let genFname = () => {
                 let chars = randomChars(20);
                 if (fs.existsSync(path.join(this.tempdir, chars + ext)))
@@ -372,7 +375,7 @@ module.exports = settings => {
                     if (infname.isTemp) {
                         //copy last one out
                         let copyLastfname = Object.assign({}, referencePath);
-                        copyLastfname.name += '_edited';
+                        copyLastfname.name += outSuffix;
                         copyLastfname.base = copyLastfname.name + copyLastfname.ext;
 
                         copyFile(infname, copyLastfname);
