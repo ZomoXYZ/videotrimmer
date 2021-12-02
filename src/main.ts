@@ -1,9 +1,10 @@
-const {app, BrowserWindow, ipcMain, Tray, nativeImage} = require('electron'),
-    path = require('path'),
-    fs = require('fs'),
-    { autoUpdater } = require("electron-updater"),
-    AppName = require('../package.json').name;
+import {app, BrowserWindow, ipcMain} from 'electron';
+import * as path from 'path';
+import * as fs from 'fs';
+const AppName = require('../package.json').name;
 
+
+//const { autoUpdater } = require("electron-updater");
 /*autoUpdater.logger = require("electron-log");
 autoUpdater.logger.transports.file.level = "info";
 autoUpdater.allowPrerelease = true;
@@ -12,9 +13,9 @@ autoUpdater.setFeedURL({
     url: "https://gitlab.com/_example_repo_/-/jobs/artifacts/master/raw/dist?job=build"
 });*/
 
-var IsLoaded = false;
-
-let mainWindow;
+var IsLoaded = false,
+    dataRequested = false,
+    mainWindow: BrowserWindow|null = null;
 
 ipcMain.on('exit', (event, arg) => {
     console.error(arg);
@@ -27,25 +28,35 @@ ipcMain.on('devtools', event => { //is there a way to do this without ipc?
     });
 });
 
-let dataRequested = false;
+function checkLoad() {
+    if (IsLoaded && dataRequested && mainWindow)
+        mainWindow.webContents.send('data', getAppDataPath());
+}
 
 ipcMain.on('getData', () => {
     dataRequested = true;
-    if (IsLoaded)
-        mainWindow.webContents.send('data', getAppDataPath());
+    checkLoad();
 });
 
 function getAppDataPath() {
      switch (process.platform) {
         case 'darwin':
-            return path.join(process.env.HOME, 'Library', 'Application Support', AppName);
+            if (process.env.HOME)
+                return path.join(process.env.HOME, 'Library', 'Application Support', AppName);
+            else
+                throw 'Missing Environmental Variable $HOME'
          case 'win32':
-             return path.join(process.env.APPDATA, AppName);
+            if (process.env.APPDATA)
+                return path.join(process.env.APPDATA, AppName);
+            else
+                throw 'Missing Environmental Variable $APPDTA`'
          case 'linux':
-             return path.join(process.env.HOME, '.'+AppName);
+            if (process.env.HOME)
+                return path.join(process.env.HOME, '.'+AppName);
+            else
+                throw 'Missing Environmental Variable $HOME'
          default:
-             console.log('Unsupported platform!');
-             process.exit(1);
+            throw `Unsupported platform ${process.platform}`;
      }
 }
 
@@ -63,16 +74,16 @@ function downloadFfmpeg() {
                 components: ['ffmpeg', 'ffprobe']
             }, complete);
         else
-            complete();
+            complete(null);
         
     });
     
 }
-function createWindow() {
+function createWindow(): void {
 
-    let autoupdatePath = path.join(getAppDataPath(), 'storage', 'autoupdate.json');
+    /*let autoupdatePath = path.join(getAppDataPath(), 'storage', 'autoupdate.json');
     if (fs.existsSync(autoupdatePath) && JSON.parse(fs.readFileSync(autoupdatePath).toString()))
-        autoUpdater.checkForUpdatesAndNotify();
+        autoUpdater.checkForUpdatesAndNotify();*/
     
     mainWindow = new BrowserWindow({
         width: 530, height: 560,
@@ -99,9 +110,7 @@ function createWindow() {
     
     downloadFfmpeg().then(() => {
         IsLoaded = true;
-        console.log(getAppDataPath());
-        if (dataRequested)
-            mainWindow.webContents.send('data', getAppDataPath());
+        checkLoad();
     });
     
 }

@@ -1,29 +1,67 @@
 //basic variables
-const { ipcRenderer, webFrame, remote} = require('electron'),
-    { nativeTheme } = remote,
-    mime = require('mime'),
-    getMimeType = str => mime.getType(str) || '', //mime.getType() return null if no result, empty string is easier for my usage
-    fs = require('fs'),
-    path = require('path'),
-    shell = require('child_process'),
-    rimraf = require('rimraf'),
-    
-    Version = require('../package.json').version,//
-    
-    ffmpeg = require('fluent-ffmpeg');
+import { ipcRenderer, webFrame, remote} from 'electron';
+const { nativeTheme } = remote;
+import mimeDB from 'mime-db';
+import mime from 'mime';
+const getMimeType = (str: string) => mime.getType(str) || ''; //mime.getType() return null if no result, empty string is easier for my usage
+import fs from 'fs';
+import path from 'path';
+import shell from 'child_process';
+import rimraf from 'rimraf';
+const Version = require('../package.json').version;
+import ffmpeg, { FfmpegCommand } from 'fluent-ffmpeg';
+import { AudioStream, EmptyFFProbeStream, EmptyFileData, FFProbe, FFProbeStream, StreamsData, VideoStream } from './types';
 
-var settings, appDataPath, ffDir, ffmpegDir, ffprobeDir, settingsPath;
+function fixThemeStr(str: string): "system"|"dark"|"light" {
+    if (str === "system" || str === "dark" || str === "light")
+        return str;
+    else
+        return "system"
+}
+
+//custom DOM selectors
+function getElementById(id: string): HTMLElement {
+    let elem = document.getElementById(id);
+
+    if (!elem)
+        throw `Missing Element with id ${id}`;
+
+    return elem;
+}
+
+function querySelector(query: string): HTMLElement {
+    let elem = document.querySelector(query) as HTMLElement;
+
+    if (!elem)
+        throw `Missing Element with query "${query}"`;
+
+    return elem;
+}
+
+function querySelectorAll(query: string): NodeListOf<HTMLElement> {
+    let elem = document.querySelectorAll(query) as NodeListOf<HTMLElement>;
+
+    if (!elem)
+        throw `Missing Element with query "${query}"`;
+
+    return elem;
+}
+
+var settings: {
+    theme: "system"|"dark"|"light",
+    dyslexic: boolean
+},
+    appDataPath: string, ffDir: string, ffmpegDir: string, ffprobeDir: string, settingsPath: string;
 
 //easy round functions
-const round = (num, closest=1) => Math.round(num/closest)*closest;
-round.ceil = (num, closest=1) => Math.ceil(num/closest)*closest;
-round.floor = (num, closest=1) => Math.floor(num/closest)*closest;
+const round = (num: number, closest=1) => Math.round(num/closest)*closest;
+round.ceil = (num: number, closest=1) => Math.ceil(num/closest)*closest;
+round.floor = (num: number, closest=1) => Math.floor(num/closest)*closest;
 
 //number mapping
 // https://gist.github.com/xposedbones/75ebaef3c10060a3ee3b246166caab56
-const mapNumber = (num, in_min, in_max, out_min, out_max) => {
-    return (num - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-};
+const mapNumber = (num: number, in_min: number, in_max: number, out_min: number, out_max: number) =>
+    (num - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 
 //prevent zooming
 webFrame.setVisualZoomLevelLimits(1, 1);
@@ -90,8 +128,9 @@ function main() {
 
     //settingsOrig.setDataPath(path.join(ffDir, 'storage'));
 
+    //using a proxy so settings can easily be saved as they're written to
     let settingsProxy = {
-        get(_, prop) {
+        get(_: any, prop: string) {
             if (!fs.existsSync(path.join(settingsPath, prop + '.json')))
                 return undefined;
 
@@ -101,12 +140,16 @@ function main() {
                 return undefined;
             }
         },
-        set(_, prop, value) {
-            //console.log
-            return fs.writeFileSync(path.join(settingsPath, prop + '.json'), JSON.stringify(value));
+        set(_: any, prop: string, value: any): boolean {
+            try {
+                fs.writeFileSync(path.join(settingsPath, prop + '.json'), JSON.stringify(value));
+                return true;
+            } catch(e) {
+                console.error(e);
+                return false;
+            }
         }
     };
-
     settings = new Proxy({}, settingsProxy);
 
     /*if (settings.autoupdate === undefined)
@@ -123,7 +166,7 @@ function main() {
     blockFile = false;
 
     //declarations outside of page scope
-    const videoEditor = require('./modules/editor.js')(document.querySelector('#editor video'), () => {
+    const videoEditor = require('./modules/editor.js')(querySelector('#editor video'), () => {
         blockFile = false;
     }, throwError, settings);
 
@@ -140,10 +183,14 @@ function main() {
     /* upload screen/hover */
 
     //display version number
-    document.getElementById('version').textContent = Version;
+    {
+        let elem = getElementById('version');
+        if (elem)
+            elem.textContent = Version;
+    }
 
     //settings button
-    document.getElementById('settingsButton').addEventListener('click', () => document.body.classList.add('settings'), false);
+    getElementById('settingsButton').addEventListener('click', () => document.body.classList.add('settings'), false);
 
     //check for update
     var xhttp = new XMLHttpRequest();
@@ -159,7 +206,7 @@ function main() {
                     let cv = parseInt(currentVersion[i]),
                         nv = parseInt(newVersion[i]);
                     if (nv > cv) {
-                        document.getElementById('version').classList.add('update');
+                        getElementById('version').classList.add('update');
                         break;
                     } else if (cv > nv)
                         break;
@@ -172,11 +219,8 @@ function main() {
     xhttp.send();
 
     //html's "video/*" sucks so this accepts all actual videos
-    var videoExts = [];
-    for (let ext in mime._types)
-        if (mime._types[ext].startsWith('video/'))
-            videoExts.push('.' + ext);
-    document.getElementById('fileupload').setAttribute('accept', videoExts.join(','));
+    var videoExts = Object.keys(mimeDB).filter(m=>m.startsWith('video/'));
+    getElementById('fileupload').setAttribute('accept', videoExts.join(','));
 
     //file drag+drop listeners
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -194,73 +238,86 @@ function main() {
             document.body.classList.remove('hoveringVideo');
     });
     document.addEventListener('drop', e => {
-        if (!blockFile)
+        if (!blockFile && e.dataTransfer)
             handleFiles(e.dataTransfer.files);
     }, false);
-    document.getElementById('fileupload').addEventListener('change', function () {
+    getElementById('fileupload').addEventListener('change', function () {
         if (!blockFile)
-            handleFiles(this.files);
+            handleFiles((this as HTMLInputElement).files);
     }, false);
 
     //handle file input
-    function handleFiles(files) {
+    function handleFiles(filesRaw: FileList | null) {
+
+        if (filesRaw === null)
+            return;
+
         document.body.setAttribute('class', 'processing');
 
-        videoEditor.open(document.querySelector('#editor video'));
-        videoEditor.onload(editorScaleDo);
+        getElementById('editsprogress').classList.remove('finished');
 
-        document.getElementById('editsprogress').classList.remove('finished');
+        console.log(filesRaw);
 
-        console.log(files);
+        let files = Array.from(filesRaw).filter(f => getMimeType(f.path).split('/')[0] === 'video');
 
-        files = Array.from(files).filter(f => getMimeType(f.path).split('/')[0] === 'video');
-
-        if (files.length)
+        if (files.length) {
+            videoEditor.open(querySelector('#editor video'));
+            videoEditor.onload(editorScaleDo);
             processVideo(files[0]);
-        else
+        } else
             document.body.removeAttribute('class');
     }
 
     /* settings */
 
     //auto update
-    /*document.getElementById('autoupdatetoggle').checked = settings.autoupdate;
-    document.getElementById('autoupdatetoggle').addEventListener('change', e => {
+    /*getElementById('autoupdatetoggle').checked = settings.autoupdate;
+    getElementById('autoupdatetoggle').addEventListener('change', e => {
         settings.autoupdate = e.target.checked;
     }, false);*/
 
     //theme
-    try {
-        nativeTheme.themeSource = settings.theme;
-    } catch (e) {
-        settings.theme = 'system';
-        nativeTheme.themeSource = settings.theme;
+    {
+        try {
+            nativeTheme.themeSource = settings.theme;
+        } catch (e) {
+            settings.theme = 'system';
+            nativeTheme.themeSource = settings.theme;
+        }
+
+        let elem = getElementById('themeselect') as HTMLInputElement;
+        if (elem) {
+            elem.value = settings.theme;
+            elem.addEventListener('change', e => {
+                document.body.setAttribute('theme', elem.value);
+                settings.theme = fixThemeStr(elem.value);
+                nativeTheme.themeSource = settings.theme;
+            }, false);
+        }
     }
-    document.getElementById('themeselect').value = settings.theme;
-    document.getElementById('themeselect').addEventListener('change', e => {
-        document.body.setAttribute('theme', e.target.value);
-        settings.theme = e.target.value;
-        nativeTheme.themeSource = settings.theme;
-    }, false);
 
     updateTheme();
     nativeTheme.on('updated', updateTheme);
 
     //dyslexia
-    if (settings.dyslexic)
-        document.body.setAttribute('dyslexic', '');
-    else
-        document.body.removeAttribute('dyslexic');
-    document.getElementById('dyslexictoggle').checked = settings.dyslexic;
-    document.getElementById('dyslexictoggle').addEventListener('change', e => {
-        if (e.target.checked)
+    {
+        if (settings.dyslexic)
             document.body.setAttribute('dyslexic', '');
         else
             document.body.removeAttribute('dyslexic');
-        settings.dyslexic = e.target.checked;
-    }, false);
 
-    document.getElementById('deleteall').addEventListener('click', () => {
+        let elem = getElementById('dyslexictoggle') as HTMLInputElement;
+        elem.checked = settings.dyslexic;
+        elem.addEventListener('change', e => {
+            if (elem.checked)
+                document.body.setAttribute('dyslexic', '');
+            else
+                document.body.removeAttribute('dyslexic');
+            settings.dyslexic = elem.checked;
+        }, false);
+    }
+
+    getElementById('deleteall').addEventListener('click', () => {
         document.body.classList.remove('settings');
         document.body.classList.add('loadingMain');
 
@@ -271,12 +328,12 @@ function main() {
         }, 200);
     }, false);
 
-    document.getElementById('closeSettings').addEventListener('click', () => document.body.classList.remove('settings'), false);
+    getElementById('closeSettings').addEventListener('click', () => document.body.classList.remove('settings'), false);
 
     /* processing video */
 
     //ffprobe file and process the data
-    function processVideo(file) {
+    function processVideo(file: File) {
 
         //ffprobe time
         let probe = shell.spawn(ffprobeDir, ['-v', 'error', '-show_format', '-show_streams', '-print_format', 'json', file.path]),
@@ -292,30 +349,44 @@ function main() {
 
         probe.on('close', code => {
             console.log(`child process exited with code ${code}`);
-            output = JSON.parse(output);
-            console.log(output);
+            let data = JSON.parse(output) as FFProbe;
+            console.log(data);
 
-            displayEditor(file, output);
+            displayEditor(file, data);
         });
 
     }
 
     //function to create an object of each stream's data
-    function getStreamsData(streams = []) {
-        let ret = {
+    function getStreamsData(streams: FFProbeStream[] = []) {
+        
+        let ret: StreamsData = {
             video: [],
             audio: [],
             subtitles: [],
             other: [],
             primary: {
-                video: getStreamData(false, 'video'),
-                audio: getStreamData(false, 'audio')
+                video: getStreamData('video') as VideoStream,
+                audio: getStreamData('audio') as AudioStream
             }
         };
 
         for (let i = 0; i < streams.length; i++) {
-            let codecType = !['video', 'audio', 'subtitles'].includes(streams[i].codec_type) ? 'other' : streams[i].codec_type;
-            ret[codecType].push(getStreamData(streams[i], codecType));
+            let codec = streams[i].codec_type;
+            switch (codec) {
+                case 'video':
+                    ret.video.push(getStreamData('video', streams[i]) as VideoStream);
+                    break;
+                case 'audio':
+                    ret.audio.push(getStreamData('audio', streams[i]) as AudioStream);
+                    break;
+                case 'subtitles':
+                    ret.subtitles.push(getStreamData('subtitles', streams[i]) as FFProbeStream);
+                    break;
+                default:
+                    ret.other.push(streams[i] as FFProbeStream);
+                    break;
+            }
         }
 
         if (ret.video.length)
@@ -327,16 +398,28 @@ function main() {
     }
 
     //function to create an objecy of video data
-    function getStreamData(stream = {
-        avg_frame_rate: '0',
-        bit_rate: '0',
-        codec_long_name: '',
-        codec_name: '',
-        width: 0,
-        height: 0,
-        display_aspect_ratio: '',
-        duration: 0
-    }, type) {
+
+    function GETSTREAMDATA(type: "video", stream?: FFProbeStream): VideoStream {
+        if (!stream)
+            stream = EmptyFFProbeStream();
+
+        return {
+            framerate: eval(stream.avg_frame_rate),
+            bitrate: parseInt(stream.bit_rate),
+            frameCount: parseInt(stream.nb_frames),
+            codecLong: stream.codec_long_name,
+            codec: stream.codec_name,
+            width: stream.width,
+            height: stream.height,
+            duration: parseFloat(stream.duration)
+        };
+    }
+
+    function getStreamData(type: string, stream?: FFProbeStream): FFProbeStream|VideoStream|AudioStream {
+        
+        if (!stream)
+            stream = EmptyFFProbeStream();
+
         switch (type) {
             case 'video':
                 return {
@@ -347,18 +430,18 @@ function main() {
                     codec: stream.codec_name,
                     width: stream.width,
                     height: stream.height,
-                    aspectRatio: stream.display_aspect_ratio,
-                    duration: stream.duration
-                };
+                    duration: parseFloat(stream.duration)
+                } as VideoStream;
             case 'audio':
                 return {
                     bitrate: parseInt(stream.bit_rate),
                     codecLong: stream.codec_long_name,
                     codec: stream.codec_name,
-                    duration: stream.duration
-                };
+                    duration: parseFloat(stream.duration)
+                } as AudioStream;
             case 'subtitles':
             case 'other':
+            default:
                 return stream;
         }
     }
@@ -366,22 +449,15 @@ function main() {
     /* editing page */
 
     //null data so functions will not error before the data is filled out
-    var data = {
-        bitrate: 0,
-        duration: 0,
-        format: '',
-        filename: '',
-        streams: getStreamsData(),
-        path: ''
-    };
+    var data = EmptyFileData();
 
     //take data and display the editor
-    function displayEditor(file, rawdata) {
+    function displayEditor(file: File, rawdata: FFProbe) {
 
         data = {
             bitrate: parseInt(rawdata.format.bit_rate),
             duration: parseFloat(rawdata.format.duration),
-            format: rawdata.format.format_long_name,
+            format: rawdata.format.format_name_long,
             filename: rawdata.format.filename,
             streams: getStreamsData(rawdata.streams),
             path: path.parse(file.path)
@@ -389,11 +465,12 @@ function main() {
 
         console.log(data);
 
-        document.querySelectorAll('#quickoptions input').forEach(input => {
-            if (input.hasAttribute('a:channels') && parseInt(input.getAttribute('a:channels')) !== data.streams.audio.length)
-                input.parentElement.classList.add('disabled');
+        querySelectorAll('#quickoptions input').forEach(input => {
+            let attr = input.getAttribute('a:channels');
+            if (input.hasAttribute('a:channels') && attr && parseInt(attr) !== data.streams.audio.length)
+                input.parentElement?.classList.add('disabled');
             else
-                input.parentElement.classList.remove('disabled');
+                input.parentElement?.classList.remove('disabled');
         });
 
         videoEditor.src(data);
@@ -401,7 +478,7 @@ function main() {
     }
 
     //finish button
-    document.querySelector('#finish .button').addEventListener('click', finishButton);
+    querySelector('#finish .button')?.addEventListener('click', finishButton);
     function finishButton() {
         //videoEditor.close();
         videoEditor.finish(runffmpegEach, [ffDir, ffmpegDir, ffprobeDir]);
@@ -423,14 +500,17 @@ function main() {
     let editorScale = 1;
     const editorScaleDo = () => {
 
-        let height = parseFloat(getComputedStyle(document.getElementById('editorInner')).height)
-            + parseFloat(getComputedStyle(document.getElementById('editor')).padding) * 2;
+        let elemEditor = getElementById('editor'),
+            elemEditorInner = getElementById('editor');
+
+        let height = parseFloat(getComputedStyle(getElementById('editorInner')).height)
+            + parseFloat(getComputedStyle(getElementById('editor')).padding) * 2;
 
         if (innerHeight < height) {
             editorScale = innerHeight / height;
-            document.getElementById('editor').style.transform = `scale(${editorScale}, ${editorScale})`;
+            getElementById('editor').style.transform = `scale(${editorScale}, ${editorScale})`;
         } else
-            document.getElementById('editor').style.transform = `scale(1, 1)`;
+            getElementById('editor').style.transform = `scale(1, 1)`;
     };
     addEventListener('resize', editorScaleDo);
     addEventListener('click', () => setTimeout(editorScaleDo, 10));
@@ -443,28 +523,28 @@ function main() {
      */
 
     //this has no error handling (must be done by parsing output)
-    function runffmpegEachCommand(command, startpercent, endpercent, part, totalpart) {
+    function runffmpegEachCommand(command: string[], startpercent: number, endpercent: number, part: number, totalpart: number) {
 
-        document.querySelector('#progress .progresstext .part').textContent = `${part}/${totalpart}`;
+        querySelector('#progress .progresstext .part').textContent = `${part}/${totalpart}`;
         if (startpercent === 0) {
-            document.querySelector('#progress .progressbar .progressinner').style.width = '30px';
-            document.querySelector('#progress .progresstext .eta').textContent = 'calculating';
+            querySelector('#progress .progressbar .progressinner').style.width = '30px';
+            querySelector('#progress .progresstext .eta').textContent = 'calculating';
         }
 
         //command is array of args
 
-        let run = (complete, error) => {
+        return new Promise((complete, error) => {
 
             //run the command
             let ffmpegShell = shell.spawn(ffmpegDir, command);
             console.log(command);
 
             //basic data stored that shouldn't be recalculated everytime ffmpeg outputs data
-            let preOutput = document.querySelector('#consoleoutput pre'),
-                frameCount = Math.floor(videoEditor.data().duration / (1 / data.streams.primary.video.framerate)),
-                timeAvgs = [],
-                lastTime = null,
-                lastFrame = 0;
+            let preOutput = querySelector('#consoleoutput pre'),
+                frameCount: number = Math.floor(videoEditor.data().duration / (1 / data.streams.primary.video.framerate)),
+                timeAvgs: number[] = [],
+                lastTime: number|null = null,
+                lastFrame: number = 0;
 
 
             //on ffmpeg data output
@@ -473,7 +553,7 @@ function main() {
                 stdout = stdout.toString();
 
                 //if it's already scrolled to the bottom then keep it scrolled to the bottom
-                let toScroll = Math.abs(document.querySelector('#consoleoutput pre').scrollTop - (document.querySelector('#consoleoutput pre').scrollHeight - document.querySelector('#consoleoutput pre').getBoundingClientRect().height)) < 25;
+                let toScroll = Math.abs(querySelector('#consoleoutput pre').scrollTop - (querySelector('#consoleoutput pre').scrollHeight - querySelector('#consoleoutput pre').getBoundingClientRect().height)) < 25;
 
                 //output data so user can read it
                 console.info(stdout);
@@ -487,13 +567,13 @@ function main() {
                     let currentFrame = parseInt(stdout.match(/frame= *(\d+) fps/)[1]),
                         percent = Math.max(0, Math.min(1, currentFrame / frameCount)),
                         vidualpercent = mapNumber(percent, 0, 1, startpercent, endpercent),
-                        timeRemaining = 'calculating';
+                        timeRemaining: number|null = null;
 
                     if (lastTime === null) {
-                        lastTime = new Date();
+                        lastTime = Date.now();
                         lastFrame = currentFrame;
                     } else {
-                        timeAvgs.push((new Date() - lastTime) / (currentFrame - lastFrame));
+                        timeAvgs.push((Date.now() - lastTime) / (currentFrame - lastFrame));
 
                         while (timeAvgs.length > 20)
                             timeAvgs.shift();
@@ -511,14 +591,14 @@ function main() {
 
                     //needs minimum 30px
                     //30px is ?%
-                    let minpercent = (document.querySelector('#progress .progressbar').getBoundingClientRect().width - 10) / 30 / 100;
+                    let minpercent = (querySelector('#progress .progressbar').getBoundingClientRect().width - 10) / 30 / 100;
 
                     vidualpercent = mapNumber(vidualpercent, 0, 1, minpercent, 1);
 
-                    document.querySelector('#progress .progressbar .progressinner').style.width = round(vidualpercent * 100, .01) + '%';
+                    querySelector('#progress .progressbar .progressinner').style.width = round(vidualpercent * 100, .01) + '%';
 
-                    document.querySelector('#progress .progresstext .part').textContent = `${part}/${totalpart}`;
-                    document.querySelector('#progress .progresstext .eta').textContent = timeRemaining;
+                    querySelector('#progress .progresstext .part').textContent = `${part}/${totalpart}`;
+                    querySelector('#progress .progresstext .eta').textContent = timeRemaining === null ? 'calculating' : timeRemaining.toString();
 
                 }
 
@@ -530,38 +610,35 @@ function main() {
                 ffmpegShell.kill('SIGINT');
                 cancelled = true;
             };
-            document.getElementById('returncancel').addEventListener('click', cancelButton);
+            getElementById('returncancel').addEventListener('click', cancelButton);
 
             //on ffmpeg done
             ffmpegShell.on('close', code => {
                 console.log(`child process exited with code ${code}`);
 
                 //disable cancel button
-                document.getElementById('returncancel').removeEventListener('click', cancelButton);
+                getElementById('returncancel').removeEventListener('click', cancelButton);
 
                 //recurse if there's another command, otherwise return
                 complete(cancelled);
             });
 
-        };
-
-        return new Promise((complete, error) => run(complete, error));
+        });
     }
 
-    function runffmpegEach(total) {
+    function runffmpegEach(total: number) {
 
         blockFile = true;
 
         let current = 0,
             eachPercent = 1 / total;
 
-        function eachCommand(args) {
+        function eachCommand(args: string[]) {
             return new Promise((complete, error) => {
 
                 runffmpegEachCommand(args, eachPercent * current, eachPercent * (current + 1), current + 1, total).then(() => {
-                    complete();
+                    complete(null);
                 }).catch(err => {
-                    //console.error('error', err);
                     document.body.classList.remove('editsprogress');
                     error(err);
                 });
@@ -572,13 +649,13 @@ function main() {
         }
 
         eachCommand.finish = () => {
-            document.querySelector('#progress .progressbar .progressinner').style.width = null;
-            document.getElementById('editsprogress').classList.add('finished');
+            querySelector('#progress .progressbar .progressinner').style.width = '';
+            getElementById('editsprogress').classList.add('finished');
             blockFile = false;
         };
 
         //prePrepare(cmd, isfirst, islast);
-        eachCommand.prePrepare = (command, isfirst, islast) => {
+        eachCommand.prePrepare = (command: FfmpegCommand, isfirst: boolean, islast: boolean) => {
             if (isfirst) {
 
                 //set start/end positions
@@ -595,30 +672,30 @@ function main() {
     }
 
     //done button
-    document.getElementById('returndone').addEventListener('click', () => {
+    getElementById('returndone').addEventListener('click', () => {
         document.body.classList.remove('editsprogress');
     });
 
     /* error */
 
     //open dev tools button
-    document.querySelector('#error .small').addEventListener('click', () => {
+    querySelector('#error .small').addEventListener('click', () => {
         ipcRenderer.send('devtools');
     });
 
     //select entire error on click
-    document.querySelector('#errordisplay pre').addEventListener('click', () => {
+    querySelector('#errordisplay pre').addEventListener('click', () => {
         var range = document.createRange();
-        range.selectNode(document.querySelector('#errordisplay pre'));
-        window.getSelection().removeAllRanges();
-        window.getSelection().addRange(range);
+        range.selectNode(querySelector('#errordisplay pre'));
+        window.getSelection()?.removeAllRanges();
+        window.getSelection()?.addRange(range);
     });
 
 }
 
 //the error object is dumb and will not JSON.stringify correctly
-function jsonifyerror(msg) {
-    let obj = {};
+function jsonifyerror(msg: any) {
+    let obj: any = {};
     for (let key in msg) {
         if (key === 'error')
             obj.error = {
@@ -633,12 +710,12 @@ function jsonifyerror(msg) {
 }
 
 //general error catch
-function throwError(err) {
+function throwError(err: any) {
     let fixedmsg = jsonifyerror(err);
     document.body.classList.add('error');
-    document.querySelector('#errordisplay pre').textContent = JSON.stringify(fixedmsg, null, 2);
+    querySelector('#errordisplay pre').textContent = JSON.stringify(fixedmsg, null, 2);
     console.log(err, fixedmsg);
 }
-addEventListener('error', (msg, url, line, col, error) => {
+addEventListener('error', msg => {
     throwError(msg);
 });

@@ -1,9 +1,10 @@
-node_modules
-dist
+.DS_Store
+.vscode/
+node_modules/
+build/
+dist/
 package-lock.json
 yarn.lock
 *.tgz
 issues
 gh_publish.sh
-.vscode
-.DS_Store
