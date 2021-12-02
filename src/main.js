@@ -2,7 +2,7 @@ const {app, BrowserWindow, ipcMain, Tray, nativeImage} = require('electron'),
     path = require('path'),
     fs = require('fs'),
     { autoUpdater } = require("electron-updater"),
-    AppName = require('./package.json').name;
+    AppName = require('../package.json').name;
 
 /*autoUpdater.logger = require("electron-log");
 autoUpdater.logger.transports.file.level = "info";

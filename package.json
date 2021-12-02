@@ -7,7 +7,7 @@
         "name": "ashley zomo",
         "email": "ashleyzomo@gmail.com"
     },
-    "main": "main.js",
+    "main": "src/main.js",
     "scripts": {
         "start": "electron .",
         "build": "electron-builder build"

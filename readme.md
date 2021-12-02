@@ -16,6 +16,7 @@
 
 - changed how temp files work
   - temp folders are now per-video rather than in the application folder
+- moved source code into the src file
 
 **fixes**
 

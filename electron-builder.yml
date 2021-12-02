@@ -3,14 +3,7 @@ productName: "Videotrimmer"
 artifactName: "${productName}-${os}-${version}.${ext}"
 
 files:
-  - "index.html"
-  - "index.css"
-  - "index.css.map"
-  - "index.js"
-  - "main.js"
-  - "resources/**/*"
-  - "resources/**/*"
-  - "modules/*"
+  - "src/**/*"
 
 mac:
   category: "public.app-category.utilities"
