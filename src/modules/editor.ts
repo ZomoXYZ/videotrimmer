@@ -300,7 +300,7 @@ export default function editor(video: HTMLVideoElement, onload: () => void, erro
             editorOptions.generate(data);
             videoData = data;
         },
-        finish(runFFMPEG: (total: number) => ((args: string[]) => Promise<null>), ffDirs: [string, string, string]) {
+        finish(runFFMPEG: (total: number) => ((args: string[]) => Promise<null>), ffDirs: [path.ParsedPath, path.ParsedPath, path.ParsedPath]) {
             video.pause();
             isOpen = false;
             editorOptions.finish(videoSrc, tmpDir, runFFMPEG, ffDirs, trimEndPos - trimStartPos);

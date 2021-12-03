@@ -1,5 +1,5 @@
-import { FfprobeStream } from "fluent-ffmpeg"
-import path from "path"
+import { FfmpegCommand, FfprobeStream } from "fluent-ffmpeg"
+import { ParsedPath } from "path"
 
 type FFProbe = {
     streams: FFProbeStream[],
@@ -168,7 +168,7 @@ type StreamsData = {
     }
 }
 
-type ParsedPath = path.ParsedPath;
+type ParsedPath = ParsedPath;
 
 type FileData = {
     bitrate: number,
@@ -207,4 +207,14 @@ interface editorInfo extends editorInfoBase {
         basic: { [keys: string]: boolean|string },
         advanced: { [keys: string]: any }
     }
+}
+
+interface PathParsedExt extends ParsedPath {
+    isTemp?: boolean;
+}
+
+interface FfmpegCommandExt extends FfmpegCommand {
+    _complexFilters: any,
+    _currentOutput: any,
+    _prepare: any
 }

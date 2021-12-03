@@ -1,10 +1,10 @@
-import { editorInfo, editorInfoBase, FileData, ParsedPath, ParsedPathExt, Settings } from "../types";
+import { editorInfo, editorInfoBase, FfmpegCommandExt, FileData, ParsedPath, ParsedPathExt, PathParsedExt, Settings } from "../types";
 import path from 'path';
 import fs from 'fs';
-import fluentFFMPEG from 'fluent-ffmpeg';
+import fluentFFMPEG, { FfmpegCommand } from 'fluent-ffmpeg';
 import { spawnSync as shell } from 'child_process';
 import { getElementById } from "./getElem";
-import { RawOptions, RawOptionsBasicCheckbox, RawOptionsBasicDropdown, RawOptionsBasicTypes, RawOptionsBasic } from "./rawEditorOptions";
+import { RawOptions, RawOptionsBasicCheckbox, RawOptionsBasicDropdown, RawOptionsBasicTypes, RawOptionsBasic, EditorRunCommand } from "./rawEditorOptions";
 import rimraf from "rimraf";
 
 const fsPromise = fs.promises,
@@ -330,7 +330,7 @@ module.exports = (settings: Settings) => {
             return ret;
         }
 
-        async clearTemp() {
+        clearTemp() {
             return new Promise((complete, error) =>
                 rimraf(this.tempdir, complete));
         }
@@ -352,81 +352,109 @@ module.exports = (settings: Settings) => {
             return shell(this.FF.probe, args);
         }
 
-        fullcommand(f, val, isfirst, islast, infname, tempdir, prePrepare, referencePath) {// function(fluentFFMPEG, video info + commands, input value), input value
+        /**
+         * 
+         * @param f function (taken from rawEdtorOptions.ts)
+         * @param val value of the input selected
+         * @param isfirst 
+         * @param islast 
+         * @param infname 
+         * @param tempdir (unused)
+         * @param prePrepare function (i think it's taken from a higher file)
+         * @param referencePath 
+         * @returns 
+         */
+        //infname, tmpDir, runFFMPEG.prePrepare, lastNontempPath
+        fullcommand(f: EditorRunCommand, val: boolean|string, isfirst: boolean, islast: boolean, infname: PathParsedExt, tempdir, prePrepare: (command: FfmpegCommand, isfirst: boolean, islast: boolean) => void, referencePath: path.ParsedPath): Promise<[string, PathParsedExt, PathParsedExt]|[]> {// function(fluentFFMPEG, video info + commands, input value), input value
 
             return new Promise((complete, fail) => {
 
-                //console.log('input', this.getInput(), 'output', this.getOutput(), this.fnames);
+                if (!f)
+                    complete([]);
+                else {
 
-                let outfname = null;
+                    //console.log('input', this.getInput(), 'output', this.getOutput(), this.fnames);
 
-                let info = genInfo();
-                //info.newCommand = (fname, ffmpeg) => this.newCommand(fname, ffmpeg);
-                /*info.getOutput = fnameSuffix => this.getOutput(fnameSuffix);
-                info.getOutputPath = fnameSuffix => path.format(this.getOutput(fnameSuffix));*/
-                info.getInput = () => Object.assign({}, infname);
-                info.getInputPath = () => path.format(info.getInput());
-                info.rawffmpeg = args => this.rawffmpeg(args);
-                info.rawffprobe = args => this.rawffprobe(args);
-                info.asNewFile = (outSuffix='_edited') => {
+                    let outfname: PathParsedExt|null = null;
+
+                    //data and some functions to be sent to the command 
+
+                    let info = {
+                        ...genInfo(),
                     
-                    if (infname.isTemp) {
-                        //copy last one out
-                        let copyLastfname = Object.assign({}, referencePath);
-                        copyLastfname.name += outSuffix;
-                        copyLastfname.base = copyLastfname.name + copyLastfname.ext;
+                        //info.newCommand = (fname, ffmpeg) => this.newCommand(fname, ffmpeg);
+                        /*info.getOutput = fnameSuffix => this.getOutput(fnameSuffix);
+                        info.getOutputPath = fnameSuffix => path.format(this.getOutput(fnameSuffix));*/
 
-                        copyFile(infname, copyLastfname);
-                    }
+                        getInput: () => Object.assign({}, infname),
+                        getInputPath: () => path.format(info.getInput()),
+                        rawffmpeg: (args: string[]) => this.rawffmpeg(args),
+                        rawffprobe: (args: string[]) => this.rawffprobe(args),
+                        asNewFile: (outSuffix='_edited') => {
+                            
+                            if (infname.isTemp) {
+                                //copy last one out
+                                let copyLastfname = Object.assign({}, referencePath);
+                                copyLastfname.name += outSuffix;
+                                copyLastfname.base = copyLastfname.name + copyLastfname.ext;
 
-                    outfname = Object.assign({}, referencePath);
-                    outfname.name += outSuffix;
-                    outfname.base = outfname.name + outfname.ext;
+                                copyFile(infname, copyLastfname);
+                            }
 
-                    return outfname;
-                }; //outfname will be path.parse object
-
-                let cmd = f(fluentFFMPEG(), info, val);
-
-                //might deprecate in favor of info.asNewFile(outSuffix)
-                if (cmd instanceof [].constructor)
-                    [cmd, outfname] = cmd;
-
-                if (cmd instanceof fluentFFMPEG().constructor) {
-
-                    let tempfname = this.genTemp(infname.ext);
-
-                    if (outfname === null) {
-                        if (islast) {
                             outfname = Object.assign({}, referencePath);
-
-                            outfname.name+= '_edited';
+                            outfname.name += outSuffix;
                             outfname.base = outfname.name + outfname.ext;
-                        }// else
-                            //outfname = this.genTemp(infname.ext);
+
+                            return outfname;
+                        }
+                    };
+
+                    let cmd = f(fluentFFMPEG(), info, val) as FfmpegCommandExt;
+
+                    //might deprecate in favor of info.asNewFile(outSuffix)
+                    if (cmd instanceof Array) {
+                        let ofn: string;
+                        [cmd, ofn] = cmd;
+                        outfname = path.parse(ofn);
                     }
 
-                    if (cmd._complexFilters.get().length === 0) {
-                        if (cmd._currentOutput.video.get('bitrate').length === 0 && cmd._currentOutput.videoFilters.get().length === 0)
-                            cmd.videoCodec('copy');
-                        if (cmd._currentOutput.audio.get('bitrate').length === 0 && cmd._currentOutput.audioFilters.get().length === 0)
-                            cmd.audioCodec('copy');
+                    if (cmd instanceof fluentFFMPEG().constructor) {
+
+                        let tempfname = this.genTemp(infname.ext);
+
+                        if (outfname === null) {
+                            if (islast) {
+                                outfname = Object.assign({}, referencePath);
+
+                                outfname.name+= '_edited';
+                                outfname.base = outfname.name + outfname.ext;
+                            }// else
+                                //outfname = this.genTemp(infname.ext);
+                        }
+
+                        if (cmd._complexFilters.get().length === 0) {
+                            if (cmd._currentOutput.video.get('bitrate').length === 0 && cmd._currentOutput.videoFilters.get().length === 0)
+                                cmd.videoCodec('copy');
+                            if (cmd._currentOutput.audio.get('bitrate').length === 0 && cmd._currentOutput.audioFilters.get().length === 0)
+                                cmd.audioCodec('copy');
+                        }
+
+                        //console.log('in', infname, path.format(infname));
+                        //console.log('out', outfname, path.format(outfname));
+
+                        cmd.input(path.format(infname)).output(path.format(tempfname));
+
+                        if (typeof prePrepare === 'function')
+                            prePrepare(cmd, isfirst, islast);
+
+                        cmd._prepare(function (err, args) {
+                            if (err)
+                                fail(err);
+                            else
+                                complete([args, tempfname, outfname]);
+                        });
+
                     }
-
-                    //console.log('in', infname, path.format(infname));
-                    //console.log('out', outfname, path.format(outfname));
-
-                    cmd.input(path.format(infname)).output(path.format(tempfname));
-
-                    if (typeof prePrepare === 'function')
-                        prePrepare(cmd, isfirst, islast);
-
-                    cmd._prepare(function (err, args) {
-                        if (err)
-                            fail(err);
-                        else
-                            complete([args, tempfname, outfname]);
-                    });
 
                 }
 
@@ -438,7 +466,7 @@ module.exports = (settings: Settings) => {
 
     return {
         generate: (data: FileData) => generateOptions(data), //create html for options from rawEditorOptions.js
-        finish: (videoSrc, tmpDir, runFFMPEG, ffdirs, trimmedDur) => {
+        finish: (videoSrc: path.ParsedPath, tmpDir: path.ParsedPath, runFFMPEG, ffdirs: [path.ParsedPath, path.ParsedPath, path.ParsedPath], trimmedDur: number) => {
             trimmedDuration = trimmedDur;
 
             //var ffmpeg = new ffmpegWrapper(videoSrc, path.parse(`${videoSrc.dir}/${videoSrc.name}_edited${videoSrc.ext}`), ffdirs);

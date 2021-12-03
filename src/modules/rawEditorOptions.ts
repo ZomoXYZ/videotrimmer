@@ -6,7 +6,9 @@ export interface RawOptions {
     advance?: { [keys: string]: RawOptionsAdvanced }
 }
 
-interface RawOptionsBasicBase {
+export type EditorRunCommand = ((ffmpeg: fluentFFMPEG.FfmpegCommand, info: any, val: boolean|string) => fluentFFMPEG.FfmpegCommand | [fluentFFMPEG.FfmpegCommand, string])|null;
+
+export interface RawOptionsBasicBase {
     parent: string|null,
     type: RawOptionsBasicTypes,
     label: string,
@@ -17,7 +19,7 @@ interface RawOptionsBasicBase {
         visibility: boolean | ((info: any) => boolean),
         enabled: boolean | ((info: any) => boolean)
     },
-    run: ((ffmpeg: fluentFFMPEG.FfmpegCommand, info: any) => fluentFFMPEG.FfmpegCommand | [fluentFFMPEG.FfmpegCommand, string])|null
+    run: EditorRunCommand
 }
 
 /*
