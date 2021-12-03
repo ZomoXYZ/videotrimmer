@@ -1,4 +1,4 @@
-import { editorInfo, editorInfoBase, FfmpegCommandExt, FileData, ParsedPath, ParsedPathExt, PathParsedExt, Settings } from "../types";
+import { editorInfo, editorInfoBase, FfmpegCommandExt, FileData, ParsedPath, PathParsedExt, Settings } from "../types";
 import path from 'path';
 import fs from 'fs';
 import fluentFFMPEG, { FfmpegCommand } from 'fluent-ffmpeg';
@@ -22,7 +22,7 @@ module.exports = (settings: Settings) => {
         return chars;
     }
 
-    function copyFile(infile, outfile, i=0) {
+    function copyFile(infile: ParsedPath, outfile: ParsedPath, i: number = 0): Promise<void> {
 
         let outfileMod = Object.assign({}, outfile),
             suffix = '';
@@ -54,7 +54,7 @@ module.exports = (settings: Settings) => {
 
     }
 
-    function genInfo() {
+    function genInfo(): editorInfo {
 
         let base = genInfoBase();
 
@@ -68,13 +68,14 @@ module.exports = (settings: Settings) => {
             }
         };
 
-        for (let id in options.basic) {
+        for (let id in rawOptions.basic) {
             let elem = getElementById('basic_' + id) as HTMLInputElement,
                 val = null,
-                type: 'checkbox'|'dropdown' = options.basic[id].type;
+                type: 'checkbox'|'dropdown' = rawOptions.basic[id].type,
+                parent = rawOptions.basic[id].parent;
 
-            if (options.basic[id].parent !== null)
-                type = options.basic[options.basic[id].parent].type;
+            if (parent !== null)
+                type = rawOptions.basic[parent].type;
 
             switch (type) {
                 case 'checkbox':
@@ -96,8 +97,8 @@ module.exports = (settings: Settings) => {
 
         //update visibilities and diableds
 
-        for (let id in options.basic) {
-            let { dynamic } = options.basic[id],
+        for (let id in rawOptions.basic) {
+            let { dynamic } = rawOptions.basic[id],
                 elem = getElementById('basic_' + id);
 
             if (dynamic.visibility !== null && ['boolean', 'function'].includes(typeof dynamic.visibility)) {
@@ -142,7 +143,7 @@ module.exports = (settings: Settings) => {
 
     }
 
-    function createDropdown(id: string, options: RawOptionsBasicDropdown) {
+    function createDropdown(id: string, options: RawOptionsBasicDropdown): HTMLLabelElement {
 
         let container = document.createElement('label');
 
@@ -181,7 +182,7 @@ module.exports = (settings: Settings) => {
 
     }
 
-    function createCheckbox(id: string, options: RawOptionsBasicCheckbox) {
+    function createCheckbox(id: string, options: RawOptionsBasicCheckbox): HTMLLabelElement {
 
         let container = document.createElement('label');
 
@@ -224,7 +225,7 @@ module.exports = (settings: Settings) => {
 
     }
 
-    function createHTML(type: "checkbox"|"dropdown", id: string, options: RawOptionsBasic) {
+    function createHTML(type: "checkbox"|"dropdown", id: string, options: RawOptionsBasic): HTMLLabelElement {
 
         switch(type) {
             case 'checkbox':
