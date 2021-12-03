@@ -1,4 +1,5 @@
 import { FfprobeStream } from "fluent-ffmpeg"
+import path from "path"
 
 type FFProbe = {
     streams: FFProbeStream[],
@@ -167,6 +168,8 @@ type StreamsData = {
     }
 }
 
+type ParsedPath = path.ParsedPath;
+
 type FileData = {
     bitrate: number,
     duration: number,
@@ -184,5 +187,24 @@ export const EmptyFileData = (): FileData => {
         filename: '',
         streams: getStreamsData(),
         path: ''
+    }
+}
+
+interface Settings {
+    theme: "system"|"dark"|"light",
+    dyslexic: boolean,
+    discordnitro: number
+};
+
+interface editorInfoBase {
+    data: FileData|null,
+    duration: number,
+    settings: Settings
+}
+
+interface editorInfo extends editorInfoBase {
+    options: {
+        basic: { [keys: string]: boolean|string },
+        advanced: { [keys: string]: any }
     }
 }

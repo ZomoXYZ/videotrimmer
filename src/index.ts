@@ -10,7 +10,9 @@ import shell from 'child_process';
 import rimraf from 'rimraf';
 const Version = require('../package.json').version;
 import ffmpeg, { FfmpegCommand } from 'fluent-ffmpeg';
-import { AudioStream, EmptyFFProbeStream, EmptyFileData, FFProbe, FFProbeStream, StreamsData, VideoStream } from './types';
+import { AudioStream, EmptyFFProbeStream, EmptyFileData, FFProbe, FFProbeStream, Settings, StreamsData, VideoStream } from './types';
+import editor from './modules/editor';
+import { getElementById, querySelector, querySelectorAll } from './modules/getElem';
 
 function fixThemeStr(str: string): "system"|"dark"|"light" {
     if (str === "system" || str === "dark" || str === "light")
@@ -19,38 +21,7 @@ function fixThemeStr(str: string): "system"|"dark"|"light" {
         return "system"
 }
 
-//custom DOM selectors
-function getElementById(id: string): HTMLElement {
-    let elem = document.getElementById(id);
-
-    if (!elem)
-        throw `Missing Element with id ${id}`;
-
-    return elem;
-}
-
-function querySelector(query: string): HTMLElement {
-    let elem = document.querySelector(query) as HTMLElement;
-
-    if (!elem)
-        throw `Missing Element with query "${query}"`;
-
-    return elem;
-}
-
-function querySelectorAll(query: string): NodeListOf<HTMLElement> {
-    let elem = document.querySelectorAll(query) as NodeListOf<HTMLElement>;
-
-    if (!elem)
-        throw `Missing Element with query "${query}"`;
-
-    return elem;
-}
-
-var settings: {
-    theme: "system"|"dark"|"light",
-    dyslexic: boolean
-},
+var settings: Settings,
     appDataPath: string, ffDir: string, ffmpegDir: string, ffprobeDir: string, settingsPath: string;
 
 //easy round functions
@@ -166,7 +137,7 @@ function main() {
     blockFile = false;
 
     //declarations outside of page scope
-    const videoEditor = require('./modules/editor.js')(querySelector('#editor video'), () => {
+    const videoEditor = editor(querySelector('#editor video') as HTMLVideoElement, () => {
         blockFile = false;
     }, throwError, settings);
 
@@ -261,7 +232,7 @@ function main() {
         let files = Array.from(filesRaw).filter(f => getMimeType(f.path).split('/')[0] === 'video');
 
         if (files.length) {
-            videoEditor.open(querySelector('#editor video'));
+            videoEditor.open();
             videoEditor.onload(editorScaleDo);
             processVideo(files[0]);
         } else
@@ -323,8 +294,7 @@ function main() {
 
         setTimeout(() => {
             rimraf.sync(ffDir);
-            require('electron').remote.getCurrentWindow().close();
-
+            remote.getCurrentWindow().close();
         }, 200);
     }, false);
 
@@ -398,22 +368,6 @@ function main() {
     }
 
     //function to create an objecy of video data
-
-    function GETSTREAMDATA(type: "video", stream?: FFProbeStream): VideoStream {
-        if (!stream)
-            stream = EmptyFFProbeStream();
-
-        return {
-            framerate: eval(stream.avg_frame_rate),
-            bitrate: parseInt(stream.bit_rate),
-            frameCount: parseInt(stream.nb_frames),
-            codecLong: stream.codec_long_name,
-            codec: stream.codec_name,
-            width: stream.width,
-            height: stream.height,
-            duration: parseFloat(stream.duration)
-        };
-    }
 
     function getStreamData(type: string, stream?: FFProbeStream): FFProbeStream|VideoStream|AudioStream {
         
@@ -626,14 +580,14 @@ function main() {
         });
     }
 
-    function runffmpegEach(total: number) {
+    function runffmpegEach(total: number): (args: string[]) => Promise<null> {
 
         blockFile = true;
 
         let current = 0,
             eachPercent = 1 / total;
 
-        function eachCommand(args: string[]) {
+        function eachCommand(args: string[]): Promise<null> {
             return new Promise((complete, error) => {
 
                 runffmpegEachCommand(args, eachPercent * current, eachPercent * (current + 1), current + 1, total).then(() => {

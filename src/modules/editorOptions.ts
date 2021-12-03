@@ -1,17 +1,21 @@
-const fluentFFMPEG = require('fluent-ffmpeg'),
-    path = require('path'),
-    fs = require('fs'),
-    rimraf = require('rimraf'),
-    fsPromise = fs.promises,
-    shell = require('child_process').spawnSync,
-    options = require('./rawEditorOptions.js');
+import { editorInfo, editorInfoBase, FileData, ParsedPath, ParsedPathExt, Settings } from "../types";
+import path from 'path';
+import fs from 'fs';
+import fluentFFMPEG from 'fluent-ffmpeg';
+import { spawnSync as shell } from 'child_process';
+import { getElementById } from "./getElem";
+import { RawOptions, RawOptionsBasicCheckbox, RawOptionsBasicDropdown, RawOptionsBasicTypes, RawOptionsBasic } from "./rawEditorOptions";
+import rimraf from "rimraf";
 
-module.exports = settings => {
+const fsPromise = fs.promises,
+    rawOptions: RawOptions = require('./rawEditorOptions.js');
 
-    var videoData = null,
-        trimmedDuration = null; // will stay null until finish() is called form editor.js
+module.exports = (settings: Settings) => {
 
-    function randomChars(length) {
+    var videoData: FileData | null = null,
+        trimmedDuration: number | null = null; // will stay null until finish() is called form editor.js
+
+    function randomChars(length: number) {
         let chars = '';
         for (let i = 0; i < length; i++)
             chars += String.fromCharCode(97 + Math.round(Math.random() * 25));
@@ -38,39 +42,49 @@ module.exports = settings => {
         
     }
 
-    function genInfo(uninitialized) {
+    function genInfoBase(): editorInfoBase {
 
-        let ret = {
+        let ret: editorInfoBase = {
             data: videoData,
-            duration: trimmedDuration,
+            duration: trimmedDuration||0,
             settings
         };
 
-        if (!uninitialized) {
+        return ret;
 
-            ret.options = {
+    }
+
+    function genInfo() {
+
+        let base = genInfoBase();
+
+        let ret: editorInfo = {
+            data: base.data,
+            duration: base.duration,
+            settings: base.settings,
+            options: {
                 basic: {},
                 advanced: {}
-            };
-
-            for (let id in options.basic) {
-                let elem = document.getElementById('basic_' + id),
-                    val = null,
-                    type = options.basic[id].type;
-
-                if (options.basic[id].parent !== null)
-                    type = options.basic[options.basic[id].parent].type;
-
-                switch (type) {
-                    case 'checkbox':
-                        val = elem.checked;
-                        break;
-                    case 'dropdown':
-                        val = elem.value;
-                }
-
-                ret.options.basic[id] = val;
             }
+        };
+
+        for (let id in options.basic) {
+            let elem = getElementById('basic_' + id) as HTMLInputElement,
+                val = null,
+                type: 'checkbox'|'dropdown' = options.basic[id].type;
+
+            if (options.basic[id].parent !== null)
+                type = options.basic[options.basic[id].parent].type;
+
+            switch (type) {
+                case 'checkbox':
+                    val = elem.checked;
+                    break;
+                case 'dropdown':
+                    val = elem.value;
+            }
+
+            ret.options.basic[id] = val;
         }
 
         return ret;
@@ -84,7 +98,7 @@ module.exports = settings => {
 
         for (let id in options.basic) {
             let { dynamic } = options.basic[id],
-                elem = document.getElementById('basic_' + id);
+                elem = getElementById('basic_' + id);
 
             if (dynamic.visibility !== null && ['boolean', 'function'].includes(typeof dynamic.visibility)) {
                 let val = true;
@@ -94,9 +108,9 @@ module.exports = settings => {
                     val = !dynamic.visibility;
 
                 if (val)
-                    elem.parentElement.parentElement.setAttribute('hidden', '')
+                    elem.parentElement?.parentElement?.setAttribute('hidden', '')
                 else
-                    elem.parentElement.parentElement.removeAttribute('hidden');
+                    elem.parentElement?.parentElement?.removeAttribute('hidden');
             }
 
             if (dynamic.enabled !== null && ['boolean', 'function'].includes(typeof dynamic.enabled)) {
@@ -115,53 +129,20 @@ module.exports = settings => {
         }
     }
 
-    function onUpdateValues(elem) {
+    function onUpdateValues(elem: HTMLInputElement|HTMLSelectElement) {
         elem.addEventListener('change', updateValues);
     }
 
-    function getValue(val, strictType, args = []) {
+    function getValue<T extends string|number|boolean = string>(val: T | ((args: any[], info: editorInfoBase) => T), args: any[] = []): T {
 
         if (typeof val === 'function')
-            val = val(...args, genInfo());
-        
-        if (strictType) {
-            if (typeof strictType === 'object') {
-
-                if (typeof val === 'object' && val.constructor === strictType.constructor)
-                    return val;
-
-            } else if (typeof val === typeof strictType)
-                return val;
-
-            return null;
-        }
-
-        return val;
-        
-    }
-
-    function getValueNoOpt(val, strictType, args = []) {
-
-        if (typeof val === 'function')
-            val = val(...args, genInfo(true));
-
-        if (strictType) {
-            if (typeof strictType === 'object') {
-
-                if (typeof val === 'object' && val.constructor === strictType.constructor)
-                    return val;
-
-            } else if (typeof val === typeof strictType)
-                return val;
-
-            return null;
-        }
+            val = val(args, genInfoBase());
 
         return val;
 
     }
 
-    function createDropdown(id, options) {
+    function createDropdown(id: string, options: RawOptionsBasicDropdown) {
 
         let container = document.createElement('label');
 
@@ -178,10 +159,10 @@ module.exports = settings => {
             }
 
             if (options.value)
-                select.value = getValueNoOpt(options.value);
+                select.value = getValue(options.value);
 
             if (typeof options.on === 'function')
-                input.addEventListener('change', e => options.on(e.target, genInfo()));
+                select.addEventListener('change', e => options.on && options.on(e.target as HTMLElement, genInfo()));
 
             onUpdateValues(select);
 
@@ -191,7 +172,7 @@ module.exports = settings => {
 
         {
             let label = document.createElement('span');
-            label.textContent = getValueNoOpt(options.label, '');
+            label.textContent = getValue(options.label);
 
             container.appendChild(label);
         }
@@ -200,7 +181,7 @@ module.exports = settings => {
 
     }
 
-    function createCheckbox(id, options) {
+    function createCheckbox(id: string, options: RawOptionsBasicCheckbox) {
 
         let container = document.createElement('label');
 
@@ -209,11 +190,11 @@ module.exports = settings => {
             input.setAttribute('type', 'checkbox');
             input.setAttribute('id', 'basic_' + id);
 
-            if (getValueNoOpt(options.default))
+            if (options.default && getValue<boolean>(options.default))
                 input.checked = true;
 
             if (typeof options.on === 'function')
-                input.addEventListener('change', e => options.on(e.target, genInfo()));
+                input.addEventListener('change', e => options.on && options.on(e.target as HTMLElement, genInfo()));
 
             onUpdateValues(input);
 
@@ -234,7 +215,7 @@ module.exports = settings => {
 
         {
             let label = document.createElement('span');
-            label.textContent = getValueNoOpt(options.label, '');
+            label.textContent = getValue(options.label);
 
             container.appendChild(label);
         }
@@ -243,42 +224,48 @@ module.exports = settings => {
 
     }
 
-    function createHTML(type, id, options) {
+    function createHTML(type: "checkbox"|"dropdown", id: string, options: RawOptionsBasic) {
 
         switch(type) {
             case 'checkbox':
-                return createCheckbox(id, options);
+                return createCheckbox(id, options as RawOptionsBasicCheckbox);
             case 'dropdown':
-                return createDropdown(id, options);
+                return createDropdown(id, options as RawOptionsBasicDropdown);
         }
 
     }
 
-    function generateOptions(data) {
+    function generateOptions(data: FileData) {
 
         videoData = data;
 
-        const elem = document.getElementById('quickoptions');
+        const elem = getElementById('quickoptions');
 
         elem.innerHTML = '';
 
-        const basic = options.basic;
+        const basic = rawOptions.basic;
 
         for (let id in basic) {
-            let type = basic[id].type;
-
-            if (basic[id].parent !== null) 
-                type = basic[basic[id].parent].type;
-
-            type = type.toLowerCase();
-
-            let html = createHTML(type, id, basic[id]);
             
-            if (basic[id].small)
+            let opt = basic[id];
+
+            let type: RawOptionsBasicTypes;
+
+            if (opt.parent === null)
+                type = opt.type;
+            else
+                type = basic[opt.parent].type;
+
+            let html = createHTML(type, id, opt);
+            
+            if (opt.small)
                 html.classList.add('smaller');
 
-            if (basic[id].parent !== null) {
-                let bigcontainer = document.getElementById('basic_' + basic[id].parent).parentElement.parentElement;
+            if (opt.parent !== null) {
+                let bigcontainer = getElementById('basic_' + opt.parent).parentElement?.parentElement;
+                if (!bigcontainer)
+                    throw `unable to reach the parent element of #basic_${opt.parent}`;
+                
                 bigcontainer.appendChild(html);
             } else {
                 let bigcontainer = document.createElement('div');
@@ -294,21 +281,40 @@ module.exports = settings => {
     //custom fluentFFMPEG wrapper
     class ffmpegWrapper {
 
-        constructor(infile, ffdirs, tempdir) {// path, path, [ffDir, ffmpegDir, ffprobeDir]
+        audio: boolean;
+        video: boolean;
+        commands: fluentFFMPEG.FfmpegCommand[];
+        FF: {
+            dir: string,
+            mpeg: string,
+            probe: string
+        };
+        tempdir: string;
+        temps: ParsedPath[];
+
+        fnames: ParsedPath[];
+
+        constructor(infile: ParsedPath, ffdirs: [string, string, string], tempdir: ParsedPath) {
             this.audio = false;
             this.video = false;
             this.commands = [];
-            this.ffdirs = ffdirs;
-            this.tempdir = tempdir;
+            this.FF = {
+                dir: ffdirs[0],
+                mpeg: ffdirs[1],
+                probe: ffdirs[2]
+            };
+            this.tempdir = tempdir.dir + tempdir.base;
             this.temps = [];
+
+            this.fnames = [];
         }
         
-        genTemp(ext) {
+        genTemp(ext: string) {
 
             if (!fs.existsSync(this.tempdir))
                 fs.mkdirSync(this.tempdir);
 
-            let genFname = () => {
+            let genFname = (): string => {
                 let chars = randomChars(20);
                 if (fs.existsSync(path.join(this.tempdir, chars + ext)))
                     return genFname();
@@ -317,27 +323,19 @@ module.exports = settings => {
 
             let tempfname = genFname();
 
-            let ret = path.parse(path.join(this.tempdir, tempfname + ext));
-
-            ret.isTemp = true;
+            let ret: ParsedPath = path.parse(path.join(this.tempdir, tempfname + ext));
 
             this.temps.push(ret);
 
             return ret;
         }
 
-        clearTemp(single) {
-            if (single)
-                for (let i = 0; i < this.temps.length; i++) {
-                    let p = path.format(this.temps[i])
-                    if (fs.existsSync(p))
-                        fs.unlinkSync(p);
-                }
-            else
-                rimraf(this.tempdir, () => {});
+        async clearTemp() {
+            return new Promise((complete, error) =>
+                rimraf(this.tempdir, complete));
         }
 
-        newCommand(fname, ffmpeg) {// path, fluentFFMPEG
+        newCommand(fname: ParsedPath, ffmpeg: fluentFFMPEG.FfmpegCommand) {
             if (ffmpeg) {
                 this.commands.push(ffmpeg);
                 this.fnames.push(fname);
@@ -346,12 +344,12 @@ module.exports = settings => {
             return fluentFFMPEG();
         }
 
-        rawffmpeg(args) {// array
-            return shell(this.ffdirs[1], args);
+        rawffmpeg(args: string[]) {
+            return shell(this.FF.mpeg, args);
         }
 
-        rawffprobe(args) {// array
-            return shell(this.ffdirs[2], args);
+        rawffprobe(args: string[]) {
+            return shell(this.FF.probe, args);
         }
 
         fullcommand(f, val, isfirst, islast, infname, tempdir, prePrepare, referencePath) {// function(fluentFFMPEG, video info + commands, input value), input value
@@ -439,7 +437,7 @@ module.exports = settings => {
     }
 
     return {
-        generate: data => generateOptions(data), //create html for options from rawEditorOptions.js
+        generate: (data: FileData) => generateOptions(data), //create html for options from rawEditorOptions.js
         finish: (videoSrc, tmpDir, runFFMPEG, ffdirs, trimmedDur) => {
             trimmedDuration = trimmedDur;
 
@@ -449,7 +447,7 @@ module.exports = settings => {
 
             for (let id in options.basic) {
                 let { dynamic } = options.basic[id],
-                    elem = document.getElementById('basic_' + id),
+                    elem = getElementById('basic_' + id),
                     val = null,
                     shouldrun = true;
 

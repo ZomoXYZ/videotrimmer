@@ -1,4 +1,55 @@
-module.exports = {
+import fluentFFMPEG from 'fluent-ffmpeg';
+import { editorInfo, editorInfoBase } from '../types';
+
+export interface RawOptions {
+    basic: { [keys: string]: RawOptionsBasic },
+    advance?: { [keys: string]: RawOptionsAdvanced }
+}
+
+interface RawOptionsBasicBase {
+    parent: string|null,
+    type: RawOptionsBasicTypes,
+    label: string,
+    small?: boolean
+    default?: (info: any) => boolean,
+    on?: (target: HTMLElement, info: editorInfo) => void,
+    dynamic: {
+        visibility: boolean | ((info: any) => boolean),
+        enabled: boolean | ((info: any) => boolean)
+    },
+    run: ((ffmpeg: fluentFFMPEG.FfmpegCommand, info: any) => fluentFFMPEG.FfmpegCommand | [fluentFFMPEG.FfmpegCommand, string])|null
+}
+
+/*
+{
+    parent: "tocompress",//parent must be of same type, so type option is unnecessary
+    small: true,
+    label: "as another file",
+    dynamic: {
+        visibility: true,
+        enabled: info => info.options.basic.tocompress
+    },
+    run: null
+}
+*/
+
+export interface RawOptionsBasicCheckbox extends RawOptionsBasicBase {
+    type: "checkbox"
+}
+
+export interface RawOptionsBasicDropdown extends RawOptionsBasicBase {
+    type: "dropdown",
+    dropdown: [id: string, display: string][],
+    value: string | ((args: any[], info: editorInfoBase) => string)
+}
+
+export type RawOptionsBasic = RawOptionsBasicCheckbox | RawOptionsBasicDropdown;
+
+export type RawOptionsAdvanced = RawOptionsBasic;
+
+export type RawOptionsBasicTypes = "checkbox"|"dropdown";
+
+const options: RawOptions = {
     basic: {
         fixmic: {
             parent: null,
@@ -191,7 +242,7 @@ audio bitrate: ${audiobitrate}Kbps`);
                 if (videobitrate > 0)
                     ffmpeg.videoBitrate(Math.floor(videobitrate), constantbr);
                 if (audiobitrate > 0)
-                    ffmpeg.audioBitrate(Math.floor(audiobitrate), constantbr);
+                    ffmpeg.audioBitrate(Math.floor(audiobitrate));
 
                 if (info.options.basic.compresssecondfile) {
                     info.asNewFile('_compressed');
@@ -233,7 +284,7 @@ audio bitrate: ${audiobitrate}Kbps`);
             parent: null,
             type: "checkbox",
             default: info => info.settings.discordnitro === 1,
-            on: (target, info) => info.settings.discordnitro = target.checked ? 1 : 0,
+            on: (target, info) => info.settings.discordnitro = (target as HTMLInputElement).checked ? 1 : 0,
             small: true,
             label: "Nitro",
             dynamic: {
@@ -254,7 +305,7 @@ audio bitrate: ${audiobitrate}Kbps`);
             },
             run: null
         }
-    },
+    }/*,
     advance: { // not yet implemented, this is just the idea for later
         autodiscordbuffer: {
             parent: null,
@@ -272,5 +323,7 @@ audio bitrate: ${audiobitrate}Kbps`);
             },
             run: null
         }
-    }
+    }*/
 };
+
+export default options;
