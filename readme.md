@@ -10,13 +10,14 @@
 
 ## changelog
 
-### v1.0.3
+### v1.1.0
 
 **changes**
 
 - changed how temp files work
   - temp folders are now per-video rather than in the application folder
 - moved source code into the src file
+- translated all code to typescript
 
 **fixes**
 
