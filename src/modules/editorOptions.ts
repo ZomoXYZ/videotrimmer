@@ -1,4 +1,4 @@
-import { editorInfo, editorInfoBase, FfmpegCommandExt, FileData, ParsedPath, ParsedPathExt, PathParsedExt, Settings } from "../types";
+import { editorInfo, editorInfoBase, FfmpegCommandExt, FileData, ParsedPath, PathParsedExt, Settings } from "../types";
 import path from 'path';
 import fs from 'fs';
 import fluentFFMPEG, { FfmpegCommand } from 'fluent-ffmpeg';
@@ -7,8 +7,9 @@ import { getElementById } from "./getElem";
 import { RawOptions, RawOptionsBasicCheckbox, RawOptionsBasicDropdown, RawOptionsBasicTypes, RawOptionsBasic, EditorRunCommand } from "./rawEditorOptions";
 import rimraf from "rimraf";
 
-const fsPromise = fs.promises,
-    rawOptions: RawOptions = require('./rawEditorOptions.js');
+import rawOptions from './rawEditorOptions';
+
+const fsPromise = fs.promises;
 
 module.exports = (settings: Settings) => {
 
@@ -22,7 +23,7 @@ module.exports = (settings: Settings) => {
         return chars;
     }
 
-    function copyFile(infile, outfile, i=0) {
+    async function copyFile(infile: PathParsedExt, outfile: PathParsedExt, i = 0) {
 
         let outfileMod = Object.assign({}, outfile),
             suffix = '';
@@ -36,9 +37,9 @@ module.exports = (settings: Settings) => {
         outfileMod.base = outfileMod.name + outfileMod.ext;
 
         if (fs.existsSync(path.format(outfileMod)))
-            return copyFile(infile, outfile, i+1);
+            copyFile(infile, outfile, i+1);
 
-        return fsPromise.copyFile(path.format(infile), path.format(outfileMod));
+        await fsPromise.copyFile(path.format(infile), path.format(outfileMod));
         
     }
 
@@ -68,13 +69,15 @@ module.exports = (settings: Settings) => {
             }
         };
 
-        for (let id in options.basic) {
+        for (let id in rawOptions.basic) {
             let elem = getElementById('basic_' + id) as HTMLInputElement,
                 val = null,
-                type: 'checkbox'|'dropdown' = options.basic[id].type;
+                type: 'checkbox'|'dropdown' = rawOptions.basic[id].type;
 
-            if (options.basic[id].parent !== null)
-                type = options.basic[options.basic[id].parent].type;
+            let {parent} = rawOptions.basic[id];
+
+            if (parent !== null)
+                type = rawOptions.basic[parent].type;
 
             switch (type) {
                 case 'checkbox':
@@ -96,8 +99,8 @@ module.exports = (settings: Settings) => {
 
         //update visibilities and diableds
 
-        for (let id in options.basic) {
-            let { dynamic } = options.basic[id],
+        for (let id in rawOptions.basic) {
+            let { dynamic } = rawOptions.basic[id],
                 elem = getElementById('basic_' + id);
 
             if (dynamic.visibility !== null && ['boolean', 'function'].includes(typeof dynamic.visibility)) {
@@ -364,7 +367,6 @@ module.exports = (settings: Settings) => {
          * @param referencePath 
          * @returns 
          */
-        //infname, tmpDir, runFFMPEG.prePrepare, lastNontempPath
         fullcommand(f: EditorRunCommand, val: boolean|string, isfirst: boolean, islast: boolean, infname: PathParsedExt, tempdir, prePrepare: (command: FfmpegCommand, isfirst: boolean, islast: boolean) => void, referencePath: path.ParsedPath): Promise<[string, PathParsedExt, PathParsedExt]|[]> {// function(fluentFFMPEG, video info + commands, input value), input value
 
             return new Promise((complete, fail) => {
@@ -447,9 +449,11 @@ module.exports = (settings: Settings) => {
                         if (typeof prePrepare === 'function')
                             prePrepare(cmd, isfirst, islast);
 
-                        cmd._prepare(function (err, args) {
+                        cmd._prepare(function (err: any, args: string) {
                             if (err)
                                 fail(err);
+                            else if (!outfname)
+                                fail('weird');
                             else
                                 complete([args, tempfname, outfname]);
                         });
@@ -464,27 +468,38 @@ module.exports = (settings: Settings) => {
 
     }
 
+    type runffmpegEach = {
+        eachCommand: (args: string[]) => Promise<null>;
+        finish: () => void;
+        prePrepare: (command: FfmpegCommand, isfirst: boolean, islast: boolean) => void;
+    }
+
     return {
         generate: (data: FileData) => generateOptions(data), //create html for options from rawEditorOptions.js
-        finish: (videoSrc: path.ParsedPath, tmpDir: path.ParsedPath, runFFMPEG, ffdirs: [path.ParsedPath, path.ParsedPath, path.ParsedPath], trimmedDur: number) => {
+        finish: (videoSrc: path.ParsedPath, tmpDir: path.ParsedPath, runFFMPEGFirst: (total: number) => runffmpegEach, ffdirs: [path.ParsedPath, path.ParsedPath, path.ParsedPath], trimmedDur: number) => {
             trimmedDuration = trimmedDur;
 
-            //var ffmpeg = new ffmpegWrapper(videoSrc, path.parse(`${videoSrc.dir}/${videoSrc.name}_edited${videoSrc.ext}`), ffdirs);
-            var ffmpeg = new ffmpegWrapper(videoSrc, ffdirs, tmpDir),
-                allRunFuncs = [];
+            const ffdirsStr: [string, string, string] = [ '', '', '' ];
 
-            for (let id in options.basic) {
-                let { dynamic } = options.basic[id],
+            ffdirs.forEach((ff, i) => ffdirsStr[i] = path.format(ff));
+
+            //var ffmpeg = new ffmpegWrapper(videoSrc, path.parse(`${videoSrc.dir}/${videoSrc.name}_edited${videoSrc.ext}`), ffdirs);
+            var ffmpeg = new ffmpegWrapper(videoSrc, ffdirsStr, tmpDir),
+                allRunFuncs: any[] = [];
+
+            for (let id in rawOptions.basic) {
+                let { dynamic } = rawOptions.basic[id],
                     elem = getElementById('basic_' + id),
                     val = null,
                     shouldrun = true;
 
-                switch (options.basic[id].type) {
+                switch (rawOptions.basic[id].type) {
                     case 'checkbox':
-                        val = elem.checked;
+                        val = (elem as HTMLInputElement).checked;
                         break;
                     case 'dropdown':
-                        val = elem.value;
+                        val = (elem as HTMLSelectElement).value;
+                        break;
                 }
 
                 if (dynamic.visibility !== null && ['boolean', 'function'].includes(typeof dynamic.visibility)) {
@@ -507,16 +522,16 @@ module.exports = (settings: Settings) => {
                     shouldrun = shouldrun && curval;
                 }
 
-                if (shouldrun && options.basic[id].run !== null)
-                    allRunFuncs.push([options.basic[id].run, val]);
+                if (shouldrun && rawOptions.basic[id].run !== null)
+                    allRunFuncs.push([rawOptions.basic[id].run, val]);
 
             }
 
-            runFFMPEG = runFFMPEG(allRunFuncs.length);
+            const runFFMPEG = runFFMPEGFirst(allRunFuncs.length);
 
-            let lastNontempPath = null;
+            let lastNontempPath: PathParsedExt | null = null;
 
-            const eachOption = (i, infname) => {
+            const eachOption = (i: number, infname: PathParsedExt) => {
                 if (i < allRunFuncs.length && typeof allRunFuncs[i] === 'object') {
 
                     console.log('infname', infname);
@@ -527,7 +542,7 @@ module.exports = (settings: Settings) => {
                     let args = [i === 0, i === allRunFuncs.length - 1, infname, tmpDir, runFFMPEG.prePrepare, lastNontempPath];
 
                     ffmpeg.fullcommand(...allRunFuncs[i], ...args).then(([args, tempfname, outfname]) => {
-                        runFFMPEG(args).then(cancelled => {
+                        runFFMPEG.eachCommand(args).then(cancelled => {
                             if (!cancelled) {
                                 if (outfname !== null)
                                     copyFile(tempfname, outfname);

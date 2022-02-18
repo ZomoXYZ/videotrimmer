@@ -9,8 +9,20 @@ export interface RawOptions {
 export type EditorRunCommand = ((ffmpeg: fluentFFMPEG.FfmpegCommand, info: any, val: boolean|string) => fluentFFMPEG.FfmpegCommand | [fluentFFMPEG.FfmpegCommand, string])|null;
 
 export interface RawOptionsBasicBase {
-    parent: string|null,
+    parent: null,
     type: RawOptionsBasicTypes,
+    label: string,
+    small?: boolean
+    default?: (info: any) => boolean,
+    on?: (target: HTMLElement, info: editorInfo) => void,
+    dynamic: {
+        visibility: boolean | ((info: any) => boolean),
+        enabled: boolean | ((info: any) => boolean)
+    },
+    run: EditorRunCommand
+}
+export interface RawOptionsBasicChild {
+    parent: string,
     label: string,
     small?: boolean
     default?: (info: any) => boolean,
@@ -45,13 +57,13 @@ export interface RawOptionsBasicDropdown extends RawOptionsBasicBase {
     value: string | ((args: any[], info: editorInfoBase) => string)
 }
 
-export type RawOptionsBasic = RawOptionsBasicCheckbox | RawOptionsBasicDropdown;
+export type RawOptionsBasic = RawOptionsBasicChild | RawOptionsBasicCheckbox | RawOptionsBasicDropdown;
 
 export type RawOptionsAdvanced = RawOptionsBasic;
 
 export type RawOptionsBasicTypes = "checkbox"|"dropdown";
 
-const options: RawOptions = {
+const rawOptions: RawOptions = {
     basic: {
         fixmic: {
             parent: null,
@@ -98,17 +110,25 @@ const options: RawOptions = {
 
                 let ffmpegData = info.rawffmpeg(['-i', info.getInputPath(), '-af', 'volumedetect', '-vn', '-sn', '-dn', '-f', 'null', '/dev/null']);
 
-                let shellout = ffmpegData.stderr.toString().split('\n');
+                let shellout: string[] = ffmpegData.stderr.toString().split('\n');
                 shellout = shellout.filter(l => l.startsWith('[Parsed_volumedetect'));
 
-                let audioInfo = {};
+                let audioInfo: {[keys: string]: string} = {};
 
-                shellout.forEach(l => {
+                shellout.forEach((l: string) => {
                     if (/\[.*?\] (.*)(?:$|\r)/.test(l)) {
-                        let lineinfo = l.match(/\[.*?\] (.*)(?:$|\r)/)[1].split(/:\s*/);
-                        audioInfo[lineinfo[0]] = lineinfo[1];
+
+                        let lineSpl = l.match(/\[.*?\] (.*)(?:$|\r)/);
+
+                        if (lineSpl && lineSpl.length >= 1) {
+                            let lineinfo = lineSpl[1].split(/:\s*/);
+                            audioInfo[lineinfo[0]] = lineinfo[1];
+                        }
+                        
                     }
                 });
+
+                let maxVol = audioInfo.max_volume;
 
                 if ('max_volume' in audioInfo) {
                     let maxVolume = parseFloat(audioInfo.max_volume),
@@ -142,7 +162,7 @@ const options: RawOptions = {
                     constantbr = false,
                     usedMaxbitrate = false;
 
-                const getAuto = maxbitrate => {
+                const getAuto = (maxbitrate?: number) => {
                     let size = Math.min(info.data.streams.primary.video.width, info.data.streams.primary.video.height);
                     
                     let br = 0;
@@ -298,7 +318,7 @@ audio bitrate: ${audiobitrate}Kbps`);
         discordtypeclassic: {
             parent: "discordtypenitro",
             default: info => info.settings.discordnitro === 2,
-            on: (target, info) => info.settings.discordnitro = target.checked ? 2 : 0,
+            on: (target, info) => info.settings.discordnitro = (target as HTMLInputElement).checked ? 2 : 0,
             small: true,
             label: "Nitro Classic",
             dynamic: {
@@ -328,4 +348,4 @@ audio bitrate: ${audiobitrate}Kbps`);
     }*/
 };
 
-export default options;
+export default rawOptions;

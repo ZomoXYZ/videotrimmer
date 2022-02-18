@@ -580,7 +580,13 @@ function main() {
         });
     }
 
-    function runffmpegEach(total: number): (args: string[]) => Promise<null> {
+    type runffmpegEach = {
+        eachCommand: (args: string[]) => Promise<null>;
+        finish: () => void;
+        prePrepare: (command: FfmpegCommand, isfirst: boolean, islast: boolean) => void;
+    }
+
+    function runffmpegEach(total: number): runffmpegEach {
 
         blockFile = true;
 
@@ -602,14 +608,14 @@ function main() {
             });
         }
 
-        eachCommand.finish = () => {
+        function finish() {
             querySelector('#progress .progressbar .progressinner').style.width = '';
             getElementById('editsprogress').classList.add('finished');
             blockFile = false;
         };
 
         //prePrepare(cmd, isfirst, islast);
-        eachCommand.prePrepare = (command: FfmpegCommand, isfirst: boolean, islast: boolean) => {
+        function prePrepare(command: FfmpegCommand, isfirst: boolean, islast: boolean) {
             if (isfirst) {
 
                 //set start/end positions
@@ -621,7 +627,7 @@ function main() {
             }
         };
 
-        return eachCommand;
+        return {eachCommand, finish, prePrepare};
 
     }
 
