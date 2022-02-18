@@ -23,7 +23,7 @@ module.exports = (settings: Settings) => {
         return chars;
     }
 
-    async function copyFile(infile: PathParsedExt, outfile: PathParsedExt, i = 0) {
+    async function copyFile(infile: ParsedPath, outfile: ParsedPath, i = 0) {
 
         let outfileMod = Object.assign({}, outfile),
             suffix = '';
@@ -55,7 +55,7 @@ module.exports = (settings: Settings) => {
 
     }
 
-    function genInfo() {
+    function genInfo(): editorInfo {
 
         let base = genInfoBase();
 
@@ -72,9 +72,14 @@ module.exports = (settings: Settings) => {
         for (let id in rawOptions.basic) {
             let elem = getElementById('basic_' + id) as HTMLInputElement,
                 val = null,
+<<<<<<< HEAD
                 type: 'checkbox'|'dropdown' = rawOptions.basic[id].type;
 
             let {parent} = rawOptions.basic[id];
+=======
+                type: 'checkbox'|'dropdown' = rawOptions.basic[id].type,
+                parent = rawOptions.basic[id].parent;
+>>>>>>> d1018d7e732cfff4c0c52370bebd0e72183f8b10
 
             if (parent !== null)
                 type = rawOptions.basic[parent].type;
@@ -145,7 +150,7 @@ module.exports = (settings: Settings) => {
 
     }
 
-    function createDropdown(id: string, options: RawOptionsBasicDropdown) {
+    function createDropdown(id: string, options: RawOptionsBasicDropdown): HTMLLabelElement {
 
         let container = document.createElement('label');
 
@@ -184,7 +189,7 @@ module.exports = (settings: Settings) => {
 
     }
 
-    function createCheckbox(id: string, options: RawOptionsBasicCheckbox) {
+    function createCheckbox(id: string, options: RawOptionsBasicCheckbox): HTMLLabelElement {
 
         let container = document.createElement('label');
 
@@ -227,7 +232,7 @@ module.exports = (settings: Settings) => {
 
     }
 
-    function createHTML(type: "checkbox"|"dropdown", id: string, options: RawOptionsBasic) {
+    function createHTML(type: "checkbox"|"dropdown", id: string, options: RawOptionsBasic): HTMLLabelElement {
 
         switch(type) {
             case 'checkbox':
