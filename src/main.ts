@@ -15,7 +15,7 @@ function checkLoad() {
 }
 
 // events
-ipcMain.on('exit', (event, arg) => {
+ipcMain.on('exit', (_event, arg) => {
     console.error(arg);
     process.exit(1);
 });
@@ -60,7 +60,7 @@ if (!fs.existsSync(getAppDataPath()))
 //https://electron.atom.io/docs/tutorial/quick-start/
 function downloadFfmpeg() {
     
-    return new Promise((complete, error) => {
+    return new Promise((complete, _error) => {
     
         if (!fs.existsSync(path.join(getAppDataPath(), 'ffmpeg-binaries', 'ffmpeg')) || !fs.existsSync(path.join(getAppDataPath(), 'ffmpeg-binaries', 'ffprobe')))
             downloadBinaries(['ffmpeg', 'ffprobe'], {
