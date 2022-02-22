@@ -1,7 +1,7 @@
 import {app, BrowserWindow, ipcMain} from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { name as AppName } from '../package.json';
+import { name as AppName } from '../../package.json';
 import { downloadBinaries } from 'ffbinaries';
 
 var IsLoaded = false,
@@ -90,7 +90,7 @@ function createWindow(): void {
         }
     });
     
-    mainWindow.loadURL('file://' + path.join(__dirname, 'App.html'));
+    mainWindow.loadURL('file://' + path.join(__dirname, 'UI/App.html'));
 
     mainWindow.on('closed', () => {
         mainWindow = null;

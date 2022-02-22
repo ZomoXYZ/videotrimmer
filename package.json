@@ -11,7 +11,7 @@
     "scripts": {
         "build": "tsc",
         "watch": "tsc -w",
-        "start": "npm run build && electron ./build/main.js",
+        "start": "npm run build && electron ./dist/src/main.js",
         "build-electron": "electron-builder build"
     },
     "repository": {
@@ -39,6 +39,7 @@
         "@types/rimraf": "^3.0.2",
         "electron": "^13.1.8",
         "electron-builder": "^22.11.7",
+        "esbuild": "^0.14.23",
         "typescript": "^4.5.2"
     },
     "dependencies": {

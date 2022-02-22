@@ -16,5 +16,9 @@
     ],
     "jsx": "react-jsx",
     "jsxImportSource": "preact"
-  }
+  },
+  "include": [
+    "src/**/*",
+    "package.json"
+  ]
 }

@@ -1,4 +1,4 @@
-import { h, render } from 'preact';
+import { render } from 'preact';
 import Router from 'preact-router';
 import Main from './pages/main';
 import Error from './pages/error';

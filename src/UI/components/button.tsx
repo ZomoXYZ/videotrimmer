@@ -1,4 +1,3 @@
-import { h } from 'preact';
 import { ComponentProps } from '../types/component';
 
 type ButtonProps = ComponentProps<HTMLButtonElement> & {
