@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es2020",
     "module": "commonjs",
-    "outDir": "./dist",
+    "outDir": "../../dist/UI",
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -12,13 +12,12 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "typeRoots": [
-      "./src/types/"
+      "./types/"
     ],
     "jsx": "react-jsx",
     "jsxImportSource": "preact"
   },
   "include": [
-    "src/**/*",
-    "package.json"
+    "**/*"
   ]
 }

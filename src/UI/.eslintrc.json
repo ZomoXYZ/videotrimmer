@@ -1,0 +1,54 @@
+{
+    "root": true,
+    "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended"
+    ],
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": { "project": ["./tsconfig.eslint.json"] },
+    "plugins": [
+        "@typescript-eslint"
+    ],
+    "rules": {
+        "@typescript-eslint/strict-boolean-expressions": [
+            2,
+            {
+                "allowString" : false,
+                "allowNumber" : false
+            }
+        ],
+        
+        "prefer-const": "error",
+        "quotes": ["error", "single"],
+
+        "block-scoped-var": "error",
+        "camelcase": "error",
+        "consistent-this": ["error", "that"],
+        "no-else-return": "error",
+        "no-eq-null": "error",
+        "no-floating-decimal": "error",
+        "no-implicit-coercion": "error",
+        "no-implied-eval": "error",
+        "no-invalid-this": "error",
+        "require-await": "error",
+        "yoda": "error",
+
+        "semi": ["error", "always"],
+        "semi-style": ["error", "last"],
+
+        "no-unreachable-loop": "error",
+        "no-unused-private-class-members": "error",
+        "no-use-before-define": "error",
+        "no-unmodified-loop-condition": "error",
+        "no-duplicate-imports": "error",
+        "no-promise-executor-return": "error",
+        "no-self-compare": "error",
+        "no-constructor-return": "error",
+        "no-template-curly-in-string": "error",
+        "array-callback-return": "error",
+        "no-eval": "error",
+        "no-extend-native": "error",
+        "no-extra-bind": "error"
+    },
+    "ignorePatterns": ["src/**/*.test.ts", "src/frontend/generated/*"]
+}
