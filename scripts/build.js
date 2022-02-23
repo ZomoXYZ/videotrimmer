@@ -45,4 +45,4 @@ build({
 
 });
 
-require('fs').writeFileSync('dist/UI/App.html', `<script src="./App.js"></script>`);
+require('fs').writeFileSync('dist/UI/App.html', `<body><script defer async src="./App.js"></script></body>`);

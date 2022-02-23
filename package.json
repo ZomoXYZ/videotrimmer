@@ -11,6 +11,7 @@
     "scripts": {
         "build": "node ./scripts/build.js -s",
         "start-only": "electron .",
+        "serve": "cd dist/UI && vite",
         "watch": "node ./scripts/build.js -sw",
         "start": "npm run build && electron .",
         "build-all": "node ./scripts/build.js -smb",
@@ -47,6 +48,7 @@
         "typescript": "^4.5.2"
     },
     "dependencies": {
+        "@preact/preset-vite": "^2.1.7",
         "electron-log": "^4.4.1",
         "electron-updater": "^4.3.9",
         "ffbinaries": "^1.1.4",
@@ -55,6 +57,7 @@
         "mime-db": "^1.51.0",
         "preact": "^10.6.0",
         "preact-router": "^4.0.1",
-        "rimraf": "^3.0.2"
+        "rimraf": "^3.0.2",
+        "vite": "^2.8.4"
     }
 }

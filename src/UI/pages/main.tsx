@@ -5,6 +5,7 @@ import Version from '../components/version';
 import { PageProps } from '../types/component';
 
 export default function Main({}: PageProps<{}>) {
+
 	return (
 		<div>
 			<div>Drag Video To Edit</div>
@@ -13,7 +14,9 @@ export default function Main({}: PageProps<{}>) {
 				<span>Upload Video</span>
 			</ButtonInput>
 			<Version />
-			<Button><Icons.Cog /></Button>
+			<Button>
+				<Icons.Cog />
+			</Button>
 		</div>
 	);
 }
