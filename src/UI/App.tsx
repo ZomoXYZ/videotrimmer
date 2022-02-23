@@ -20,4 +20,4 @@ function App() {
     );
 }
 
-render(<App />, document.body);
+addEventListener('load', () => render(<App />, document.body) );
