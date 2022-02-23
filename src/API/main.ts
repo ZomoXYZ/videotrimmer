@@ -90,7 +90,7 @@ function createWindow(): void {
         }
     });
     
-    mainWindow.loadURL('file://' + path.join(__dirname, 'UI/App.html'));
+    mainWindow.loadURL('file://' + path.join(__dirname, '../UI/App.html'));
 
     mainWindow.on('closed', () => {
         mainWindow = null;
