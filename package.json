@@ -11,7 +11,7 @@
     "scripts": {
         "build": "node ./scripts/build.js -s",
         "start-only": "electron .",
-        "serve": "cd dist/UI && vite",
+        "serve-ui": "cd src/UI && vite",
         "watch": "node ./scripts/build.js -sw",
         "start": "npm run build && electron .",
         "build-all": "node ./scripts/build.js -smb",
