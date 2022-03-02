@@ -53,6 +53,7 @@
         "electron-updater": "^4.3.9",
         "ffbinaries": "^1.1.4",
         "fluent-ffmpeg": "^2.1.2",
+        "history": "^5.3.0",
         "mime": "^2.5.2",
         "mime-db": "^1.51.0",
         "preact": "^10.6.0",
