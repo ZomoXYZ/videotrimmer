@@ -1,11 +1,11 @@
 import { render } from 'preact';
 import Router from 'preact-router';
+import { createHashHistory } from 'history';
 import Main from './pages/main';
 import Error from './pages/error';
 import Editor from './pages/editor';
 import Progress from './pages/progress';
 import Settings from './pages/settings';
-import { createHashHistory } from 'history';
 
 import './App.css';
 
