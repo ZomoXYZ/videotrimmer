@@ -20,12 +20,12 @@ export default function Main({ }: PageProps<{}>) {
         <div class={css`
         color: ${Color.text};
         `}>
-            <div>
-                <Checkbox label="Test Checkbox" />
-            </div>
-            <div>
-                <Dropdown label="Test Dropdown" options={dropdownOptions} />
-            </div>
+            <div><Checkbox label="Test" /></div>
+            <div><Checkbox checked label="Test" /></div>
+            <div><Checkbox disabled label="Test" /></div>
+            <div><Checkbox checked disabled label="Test" /></div>
+            <div><Dropdown label="Test Dropdown" options={dropdownOptions} /></div>
+            <div><Dropdown disabled label="Test Dropdown" options={dropdownOptions} /></div>
         </div>
     );
 }

@@ -12,6 +12,11 @@ interface ThemeColor {
         shadowHover: string,
         shadowActive: string,
         disabled: string
+    },
+    dropdown: {
+        background: string,
+        shadowHover: string,
+        disabled: string
     }
 }
 
@@ -23,22 +28,6 @@ type Themes = {
 
 const Theme: Themes = {
     color: {
-        light: {
-            background: '#fff',
-            text: '#000',
-            button: {
-                background: '#ddd',
-                backgroundHover: '#bbb',
-                backgroundActive: '#ccc',
-                border: '#eee'
-            },
-            checkbox: {
-                background: '#bbb',
-                shadowHover: '#bbb',
-                shadowActive: '#ccc',
-                disabled: '#bbb'
-            }
-        },
         dark: {
             background: '#434442',
             text: '#ddd',
@@ -53,6 +42,32 @@ const Theme: Themes = {
                 shadowHover: '#666',
                 shadowActive: '#666',
                 disabled: '#666'
+            },
+            dropdown: {
+                background: '#ddd',
+                shadowHover: '#777',
+                disabled: '#777'
+            }
+        },
+        light: {
+            background: '#fff',
+            text: '#000',
+            button: {
+                background: '#ddd',
+                backgroundHover: '#bbb',
+                backgroundActive: '#ccc',
+                border: '#eee'
+            },
+            checkbox: {
+                background: '#bbb',
+                shadowHover: '#bbb',
+                shadowActive: '#ccc',
+                disabled: '#bbb'
+            },
+            dropdown: {
+                background: '#bbb',
+                shadowHover: '#ccc',
+                disabled: '#ccc'
             }
         }
     },
