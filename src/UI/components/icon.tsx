@@ -3,6 +3,7 @@ import { JSX, RenderableProps } from 'preact';
 
 type SVGAttributes = RenderableProps<JSX.SVGAttributes>
 
+//temporary
 function Svg({ children, ...props }: SVGAttributes) {
     return (
         <svg class={css`

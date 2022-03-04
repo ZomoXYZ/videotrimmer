@@ -1,5 +1,5 @@
 import { ComponentProps } from '../types/component';
-import Theme from '../styles/theme';
+import { getColor } from '../styles/theme';
 import Icon from './icon'
 import { css } from '@emotion/css';
 import { useState } from 'preact/hooks';
@@ -12,7 +12,7 @@ export default function Checkbox({ checked: checkedDefault = false, label, small
 
     const [checked, setChecked] = useState(checkedDefault),
         [hovering, setHover] = useState(false),
-        Color = Theme.color['dark'];
+        Color = getColor();
 
     console.log('checked', checked)
 

@@ -66,4 +66,21 @@ const Theme: Themes = {
     }
 };
 
-export default Theme;
+function getColor() {
+    return Theme.color['dark'];
+}
+
+function getFont() {
+    return Theme.font.default;
+}
+
+//composite all accessibility styles together (separated by space) to be passed to the filter
+function getAccessibility() {
+    return '';
+}
+
+export {
+    getColor,
+    getFont,
+    getAccessibility
+};
