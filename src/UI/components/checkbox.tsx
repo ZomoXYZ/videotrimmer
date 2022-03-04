@@ -14,8 +14,6 @@ export default function Checkbox({ checked: checkedDefault = false, label, small
         [hovering, setHover] = useState(false),
         Color = getColor();
 
-    console.log('checked', checked)
-
     var bgColor = Color.checkbox.background;
 
     var inputShadowSpread = hovering ? '2px' : '1px',
@@ -52,11 +50,9 @@ export default function Checkbox({ checked: checkedDefault = false, label, small
             `}
             checked={checked}
             onChange={({ target }: { target: EventTarget | null }) => {
-                console.log('change')
                 if (target) {
                     const { checked } = target as HTMLInputElement;
                     setChecked(checked);
-                    console.log(checked)
                 }
             }}
             {...props} />
