@@ -1,4 +1,4 @@
-type ThemeColor = {
+interface ThemeColor {
     background: string,
     text: string,
     button: {
@@ -6,6 +6,12 @@ type ThemeColor = {
         backgroundHover: string,
         backgroundActive: string,
         border: string
+    },
+    checkbox: {
+        background: string,
+        shadowHover: string,
+        shadowActive: string,
+        disabled: string
     }
 }
 
@@ -15,7 +21,7 @@ type Themes = {
     accessibility: {[id: string]: string}
 };
 
-export default {
+const Theme: Themes = {
     color: {
         light: {
             background: '#fff',
@@ -25,6 +31,12 @@ export default {
                 backgroundHover: '#bbb',
                 backgroundActive: '#ccc',
                 border: '#eee'
+            },
+            checkbox: {
+                background: '#bbb',
+                shadowHover: '#bbb',
+                shadowActive: '#ccc',
+                disabled: '#bbb'
             }
         },
         dark: {
@@ -35,6 +47,12 @@ export default {
                 backgroundHover: '#888',
                 backgroundActive: '#777',
                 border: '#555'
+            },
+            checkbox: {
+                background: '#ddd',
+                shadowHover: '#666',
+                shadowActive: '#666',
+                disabled: '#666'
             }
         }
     },
@@ -46,4 +64,6 @@ export default {
         contrast: 'contrast(1.5)',
         invert: 'invert(1)',
     }
-} as Themes
+};
+
+export default Theme;
