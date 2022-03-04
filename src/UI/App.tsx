@@ -7,6 +7,8 @@ import Editor from './pages/editor';
 import Progress from './pages/progress';
 import Settings from './pages/settings';
 
+import Test from './pages/test';
+
 import './App.css';
 
 function App() {
@@ -15,13 +17,14 @@ function App() {
         // https://github.com/preactjs/preact-router/issues/423
         // the typemismatch is a lie apparently
         // @ts-ignore
-        <Router history={createHashHistory()}>
-            <Main path="/" />
-            <Error path="/error"/>
-            <Editor path="/editor"/>
-            <Progress path="/progress"/>
-            <Settings path="/settings"/>
-        </Router>
+        // <Router history={createHashHistory()}>
+        //     <Main path="/" />
+        //     <Error path="/error"/>
+        //     <Editor path="/editor"/>
+        //     <Progress path="/progress"/>
+        //     <Settings path="/settings"/>
+        // </Router>
+        <Test />
     );
     
 }
