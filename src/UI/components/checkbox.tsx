@@ -77,7 +77,6 @@ export default function Checkbox({ checked: checkedDefault = false, label, small
                 transform: scale(${checked ? 1 : 0}) translateZ(0);
 
                 ${checked ?? `
-                    fill: ${Color.checkbox.checked};
                     transition: transform 400ms ease-out;
                 `}
             `} />
