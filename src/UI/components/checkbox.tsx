@@ -16,8 +16,7 @@ export default function Checkbox({ checked: checkedDefault = false, label, small
 
     var bgColor = Color.checkbox.background;
 
-    var inputShadowSpread = hovering ? '2px' : '1px',
-        inputShadowSpread = checked ? '11px' : hovering ? '2px' : '1px',
+    var inputShadowSpread = checked ? '11px' : hovering ? '2px' : '1px',
         inputShadowColor = checked ? Color.checkbox.shadowActive : hovering ? Color.checkbox.shadowHover : 'transparent';
 
     return (
