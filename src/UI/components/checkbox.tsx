@@ -8,11 +8,14 @@ type CheckboxProps = ComponentProps<HTMLInputElement> & {
     smaller?: boolean;
 };
 
-export default function Checkbox({ checked: checkedDefault = false, label, smaller = false, disabled, ...props }: CheckboxProps) {
+export default function Checkbox({ checked: checkedDefault = false, label, smaller = false, disabled=false, ...props }: CheckboxProps) {
 
     const [checked, setChecked] = useState(checkedDefault),
         [hovering, setHover] = useState(false),
         Color = getColor();
+
+    if (checked && disabled)
+        setChecked(false);
 
     var bgColor = Color.checkbox.background;
 
@@ -24,7 +27,7 @@ export default function Checkbox({ checked: checkedDefault = false, label, small
             position: relative;
             display: inline-flex;
             align-items: center;
-            ${smaller ?? 'transform: scale(.7);'}
+            ${smaller && 'transform: scale(.7);'}
         `}
         for={props.id}
         onMouseOver={() => setHover(true)}
@@ -36,7 +39,7 @@ export default function Checkbox({ checked: checkedDefault = false, label, small
                 -webkit-appearance: none;
                 position: relative;
                 outline: none;
-                background: ${disabled ? Color.checkbox.disabled : bgColor};
+                background: ${bgColor};
                 border: none;
                 margin: 0;
                 margin-right: 5px;
@@ -46,7 +49,12 @@ export default function Checkbox({ checked: checkedDefault = false, label, small
                     background 200ms ease-in-out;
                 box-shadow: inset 0 0 0 ${inputShadowSpread} ${inputShadowColor};
                 display: inline-block;
+
+                ${disabled && `
+                    background: ${Color.checkbox.disabled};
+                `}
             `}
+            disabled={disabled}
             checked={checked}
             onChange={({ target }: { target: EventTarget | null }) => {
                 if (target) {
@@ -71,14 +79,14 @@ export default function Checkbox({ checked: checkedDefault = false, label, small
                 left: 0;
                 transform: scale(${checked ? 1 : 0}) translateZ(0);
 
-                ${checked ?? `
+                ${checked && `
                     transition: transform 400ms ease-out;
                 `}
             `} />
 
             <span class={css`
-                transition: color 200ms ease-in-out
-                ${disabled ?? `
+                transition: color 200ms ease-in-out;
+                ${disabled && `
                     color: ${Color.checkbox.disabled};
                 `}
             `}>{label}</span>
