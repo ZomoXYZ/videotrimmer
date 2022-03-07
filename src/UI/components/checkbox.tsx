@@ -4,7 +4,7 @@ import Icon from './icon'
 import { css } from '@emotion/css';
 import { useState } from 'preact/hooks';
 
-type CheckboxProps = ComponentProps<HTMLInputElement> & {
+interface CheckboxProps extends ComponentProps<HTMLInputElement> {
     smaller?: boolean;
 };
 

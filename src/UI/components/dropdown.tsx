@@ -5,7 +5,7 @@ import { ComponentProps } from '../types/component';
 
 export type DropdownOptions = [value: string, label: string][];
 
-type DropdownProps = ComponentProps<HTMLSelectElement> & {
+interface DropdownProps extends ComponentProps<HTMLSelectElement> {
 	label: string,
 	options: DropdownOptions
 };

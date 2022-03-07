@@ -1,3 +1,8 @@
+// TODO fix this error, if i uncomment nativeTheme then electron throws an error
+// likely caused by esbuild trying to compile electron
+
+// import { remote } from 'electron';
+// const { nativeTheme } = remote;
 interface ThemeColor {
     background: string,
     text: string,
@@ -98,17 +103,27 @@ const Theme: Themes = {
     }
 };
 
-function getColor() {
+function getColor(): ThemeColor {
+    // const theme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+    // return Theme.color[theme];
     return Theme.color['dark'];
 }
 
-function getFont() {
+function getFont(): ThemeFont {
     return Theme.font.default;
 }
 
 //composite all accessibility styles together (separated by space) to be passed to the filter
-function getAccessibility() {
-    return '';
+function getAccessibility(): string {
+    const filter: string[] = [];
+
+    // if (nativeTheme.shouldUseHighContrastColors)
+    //     filter.push(Theme.accessibility.contrast);
+
+    // if (nativeTheme.shouldUseInvertedColorScheme)
+    //     filter.push(Theme.accessibility.invert);
+
+    return filter.join(' ');
 }
 
 export {

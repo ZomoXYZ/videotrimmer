@@ -7,8 +7,8 @@ type SVGAttributes = RenderableProps<JSX.SVGAttributes>
 function Svg({ children, ...props }: SVGAttributes) {
     return (
         <svg class={css`
-        width: 25px;
-        height: 25px;
+            width: 25px;
+            height: 25px;
         `} {...props}>
             {children}
         </svg>

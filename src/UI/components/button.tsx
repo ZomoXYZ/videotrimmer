@@ -2,7 +2,7 @@ import { ComponentProps } from '../types/component';
 import { css } from '@emotion/css'
 import { getColor } from '../styles/theme';
 
-type LabelProps = ComponentProps<HTMLLabelElement> & {
+interface LabelProps extends ComponentProps<HTMLLabelElement> {
 	type?: "button" | "file";
 };
 

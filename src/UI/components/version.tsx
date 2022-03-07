@@ -3,7 +3,11 @@ import { version } from '../../../package.json';
 
 const FETCHURL = 'https://raw.githubusercontent.com/ZomoXYZ/videotrimmer/master/package.json';
 
-export default function Version() {
+interface versionProps {
+	class?: string;
+}
+
+export default function Version({ class: className }: versionProps) {
 	const versionRef = useRef<HTMLDivElement|null>(null);
 
 	async function fetchNewVersion() {
@@ -33,6 +37,6 @@ export default function Version() {
 	}, []);
 
 	return (
-		<div id="version" ref={versionRef}>{version}</div>
+		<div id="version" class={className} ref={versionRef}>{version}</div>
 	)
 }
