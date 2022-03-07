@@ -7,7 +7,7 @@ import Editor from './pages/editor';
 import Progress from './pages/progress';
 import Settings from './pages/settings';
 import { css } from '@emotion/css';
-import { getColor, getFont } from './styles/theme';
+import { getAccessibility, getColor, getFont } from './styles/theme';
 import Root from './components/root';
 
 // import Test from './pages/test';
@@ -15,13 +15,14 @@ import Root from './components/root';
 function App() {
 
     const Font = getFont(),
-        Color = getColor();
+        Color = getColor(),
+        Filter = getAccessibility();
     
     return (
         <Root class={css`
             font-family: ${Font.family};
             font-size: ${Font.size.main};
-            font-smoothing: antialiased;
+            filter: ${Filter};
 
             margin: 0;
             width: 100%;
@@ -38,6 +39,20 @@ function App() {
             *::before,
             *::after {
                 box-sizing: inherit;
+            }
+
+            > div {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                box-sizing: border-box;
+                padding: 0 15px;
             }
         `}>
 

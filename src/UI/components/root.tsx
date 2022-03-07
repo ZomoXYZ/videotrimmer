@@ -1,6 +1,5 @@
 import { css } from '@emotion/css';
 import { ComponentChildren } from 'preact';
-import { getAccessibility } from '../styles/theme';
 
 interface rootProps {
     children?: ComponentChildren;
@@ -8,8 +7,6 @@ interface rootProps {
 };
 
 export default function Root({ class: cls, children }: rootProps) {
-
-    const Filter = getAccessibility();
 
     return (
         <div class={css`
@@ -98,8 +95,6 @@ export default function Root({ class: cls, children }: rootProps) {
                 font-weight: normal;
                 font-style: normal;
             }
-
-            filter: ${Filter};
         `}>
             <div class={cls}>
                 {children}

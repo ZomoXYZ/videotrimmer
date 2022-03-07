@@ -37,6 +37,6 @@ export default function Version({ class: className }: versionProps) {
 	}, []);
 
 	return (
-		<div id="version" class={className} ref={versionRef}>{version}</div>
+		<div id="version" class={className} ref={versionRef}>v{version}</div>
 	)
 }
