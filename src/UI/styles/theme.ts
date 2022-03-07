@@ -20,9 +20,16 @@ interface ThemeColor {
     }
 }
 
+interface ThemeFont {
+    family: string;
+    size: {
+        main: string
+    };
+}
+
 type Themes = {
     color: {[id: string]: ThemeColor},
-    font: {[id: string]: string},
+    font: {[id: string]: ThemeFont},
     accessibility: {[id: string]: string}
 };
 
@@ -72,8 +79,18 @@ const Theme: Themes = {
         }
     },
     font: {
-        default: 'OpenSans',
-        dyslexic: 'OpenDyslexic'
+        default: {
+            family: 'OpenSans',
+            size: {
+                main: '24px'
+            }
+        },
+        dyslexic: {
+            family: 'OpenDyslexic',
+            size: {
+                main: '20px'
+            }
+        }
     },
     accessibility: {
         contrast: 'contrast(1.5)',
