@@ -28,11 +28,12 @@ interface ThemeColor {
 interface ThemeFont {
     family: string;
     size: {
-        main: string
+        main: string;
+        version: string;
     };
 }
 
-type Themes = {
+interface Themes {
     color: {[id: string]: ThemeColor},
     font: {[id: string]: ThemeFont},
     accessibility: {[id: string]: string}
@@ -47,7 +48,7 @@ const Theme: Themes = {
                 background: '#666',
                 backgroundHover: '#888',
                 backgroundActive: '#777',
-                border: '#555'
+                border: '#888'
             },
             checkbox: {
                 background: '#ddd',
@@ -87,13 +88,15 @@ const Theme: Themes = {
         default: {
             family: 'OpenSans',
             size: {
-                main: '24px'
+                main: '24px',
+                version: '12px'
             }
         },
         dyslexic: {
             family: 'OpenDyslexic',
             size: {
-                main: '20px'
+                main: '20px',
+                version: '12px'
             }
         }
     },
