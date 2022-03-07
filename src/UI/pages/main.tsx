@@ -1,3 +1,4 @@
+import { css } from '@emotion/css';
 import Button from '../components/button';
 import Icons from '../components/icon';
 import Version from '../components/version';
@@ -12,7 +13,12 @@ export default function Main({}: PageProps<{}>) {
 			<Button type="file">
 				Upload Video
 			</Button>
-			<Version />
+			<Version class={css`
+				position: fixed;
+				bottom: 10px;
+				left: 10px;
+				font-size: 12px;
+			`} />
 			<Button>
 				<Icons.Cog />
 			</Button>
