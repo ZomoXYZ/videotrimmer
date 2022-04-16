@@ -1,6 +1,6 @@
 {
     "name": "videotrimmer",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "license": "MIT",
     "description": "easy video trimmer",
     "author": {
@@ -29,15 +29,15 @@
     },
     "homepage": "https://github.com/ZomoXYZ/videotrimmer#readme",
     "devDependencies": {
-        "electron": "^13.1.8",
-        "electron-builder": "^22.11.7"
+        "electron": "^13.6.9",
+        "electron-builder": "^22.14.13"
     },
     "dependencies": {
-        "electron-log": "^4.4.1",
-        "electron-updater": "^4.3.9",
+        "electron-log": "^4.4.6",
+        "electron-updater": "^4.6.5",
         "ffbinaries": "^1.1.4",
         "fluent-ffmpeg": "^2.1.2",
-        "mime": "^2.5.2",
+        "mime": "^2.6.0",
         "rimraf": "^3.0.2"
     }
 }

@@ -6,9 +6,15 @@
 
 [video playback timing is inaccurate](https://github.com/w3c/media-and-entertainment/issues/4) which may cause the start and end timings to be off by a frame or two.
 
-[dmg-license](https://github.com/argv-minus-one/dmg-license) uses an outdated version of `plist`, resulting in [`xmldom` running a version with a theoretical vulnerability](https://www.npmjs.com/advisories/1769), this is outside of my control, and I have to wait for that package to update
+[pnpm breaks electron-builder](https://github.com/electron-userland/electron-builder/issues/6289), it's recommended to install dependencies with either npm or yarn :(.
 
 ## changelog
+
+### v1.0.3
+
+**changes**
+
+- fixed the startup crash bug
 
 ### v1.0.2
 
