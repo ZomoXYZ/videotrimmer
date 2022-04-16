@@ -72,7 +72,6 @@ addEventListener('load', () => onLoad());
 const loadMax = 1;
 var loadCheck = 0;
 function onLoad() {
-    console.log('loadCheck', loadCheck);
 
     if (loadCheck < loadMax) {
         loadCheck++;
