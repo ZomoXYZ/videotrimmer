@@ -12,6 +12,8 @@
 
 ### v1.0.3
 
+note: it's 1:30am, i'll package for mac and linux tomorrow
+
 **changes**
 
 - fixed the startup crash bug
