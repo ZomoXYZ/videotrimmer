@@ -46,7 +46,7 @@ ipcRenderer.on('loaded', (event, data) => {
         ipcRenderer.send('exit', 'OS IS NOT SET UP');
     
     onLoad();
-    
+
 });
 ipcRenderer.send('isLoaded');
 
@@ -67,11 +67,12 @@ function updateTheme() {
         document.body.removeAttribute('invert');
 }
 
-addEventListener('load', () => onLoad);
+addEventListener('load', () => onLoad());
 
 const loadMax = 1;
 var loadCheck = 0;
 function onLoad() {
+    console.log('loadCheck', loadCheck);
 
     if (loadCheck < loadMax) {
         loadCheck++;
