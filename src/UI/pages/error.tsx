@@ -1,11 +1,9 @@
-import { PageProps } from '../types/component';
-
-export default function Error({}: PageProps<{}>) {
+export default function Error() {
 	return (
 		<div>
 			<div>
-				<div class="bold">Error</div>
-				<div class="small">Click here to open the console</div>
+				<div className="bold">Error</div>
+				<div className="small">Click here to open the console</div>
 			</div>
 			<div>
 				<pre></pre>

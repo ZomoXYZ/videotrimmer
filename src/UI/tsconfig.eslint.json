@@ -1,11 +1,11 @@
 // Special typescript project file, used by eslint only.
 {
-    "extends": "./tsconfig.json",
-    "include": [
-        // repeated from base config's "include" setting
-        ".",
+  "extends": "./tsconfig.json",
+  "include": [
+    // repeated from base config's "include" setting
+    ".",
 
-        // these are the eslint-only inclusions
-        ".eslintrc.json",
-    ]
+    // these are the eslint-only inclusions
+    ".eslintrc.json"
+  ]
 }

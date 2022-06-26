@@ -1,42 +1,46 @@
-import { useEffect, useRef } from 'preact/hooks';
-import { version } from '../../../package.json';
+import { useEffect, useRef } from "react";
+import { APP_VERSION } from "../util/version";
 
-const FETCHURL = 'https://raw.githubusercontent.com/ZomoXYZ/videotrimmer/master/package.json';
+const FETCHURL =
+	"https://raw.githubusercontent.com/ZomoXYZ/videotrimmer/master/package.json";
 
 interface versionProps {
-	class?: string;
+	className?: string;
 }
 
-export default function Version({ class: className }: versionProps) {
-	const versionRef = useRef<HTMLDivElement|null>(null);
+export default function Version({ className }: versionProps) {
+	const versionRef = useRef<HTMLDivElement | null>(null);
 
 	async function fetchNewVersion() {
-        let packageJSON = await (await fetch(FETCHURL)).json();
-        
-        let currentVersion = version.split('.'),
-            newVersion = packageJSON.version.split('.');
+		let packageJSON = await (await fetch(FETCHURL)).json();
 
-        for (let i = 0; i < 3; i++) {
-            let cv = parseInt(currentVersion[i]),
-                nv = parseInt(newVersion[i]);
-            if (nv > cv) {
-                return true;
-            } else if (cv > nv)
-                break;
-        }
+		let currentVersion = APP_VERSION.split("."),
+			newVersion = packageJSON.version.split(".");
 
-        return false;
+		for (let i = 0; i < 3; i++) {
+			let cv = parseInt(currentVersion[i]),
+				nv = parseInt(newVersion[i]);
+			if (nv > cv) {
+				return true;
+			} else if (cv > nv) {
+				break;
+			}
+		}
+
+		return false;
 	}
 
 	useEffect(() => {
-		fetchNewVersion().then(hasUpdate => {
-			if (versionRef.current && hasUpdate) {
-				versionRef.current.classList.add('update');
+		fetchNewVersion().then((hasUpdate) => {
+			if (versionRef.current !== null && hasUpdate) {
+				versionRef.current.classList.add("update");
 			}
 		});
 	}, []);
 
 	return (
-		<div id="version" class={className} ref={versionRef}>v{version}</div>
-	)
+		<div id="version" className={className} ref={versionRef}>
+			v{APP_VERSION}
+		</div>
+	);
 }

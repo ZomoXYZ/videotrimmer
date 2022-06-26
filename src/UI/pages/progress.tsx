@@ -1,8 +1,7 @@
-import Button from '../components/button';
-import ProgressBar from '../components/progressbar';
-import { PageProps } from '../types/component';
+import Button from "../components/button";
+import ProgressBar from "../components/progressbar";
 
-export default function Progress({}: PageProps<{}>) {
+export default function Progress() {
 	return (
 		<div>
 			<ProgressBar />

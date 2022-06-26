@@ -1,8 +1,8 @@
 export default function ProgressBar() {
     return (
         <div>
-            <div class="bar"></div>
-            <div class="text"></div>
+            <div className="bar"></div>
+            <div className="text"></div>
         </div>
-    )
+    );
 }

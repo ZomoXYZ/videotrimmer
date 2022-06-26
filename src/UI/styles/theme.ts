@@ -4,25 +4,25 @@
 // import { remote } from 'electron';
 // const { nativeTheme } = remote;
 interface ThemeColor {
-    background: string,
-    text: string,
+    background: string;
+    text: string;
     button: {
-        background: string,
-        backgroundHover: string,
-        backgroundActive: string,
-        border: string
-    },
+        background: string;
+        backgroundHover: string;
+        backgroundActive: string;
+        border: string;
+    };
     checkbox: {
-        background: string,
-        shadowHover: string,
-        shadowActive: string,
-        disabled: string
-    },
+        background: string;
+        shadowHover: string;
+        shadowActive: string;
+        disabled: string;
+    };
     dropdown: {
-        background: string,
-        shadowHover: string,
-        disabled: string
-    }
+        background: string;
+        shadowHover: string;
+        disabled: string;
+    };
 }
 
 interface ThemeFont {
@@ -34,10 +34,10 @@ interface ThemeFont {
 }
 
 interface Themes {
-    color: {[id: string]: ThemeColor},
-    font: {[id: string]: ThemeFont},
-    accessibility: {[id: string]: string}
-};
+    color: { [id: string]: ThemeColor };
+    font: { [id: string]: ThemeFont };
+    accessibility: { [id: string]: string };
+}
 
 const Theme: Themes = {
     color: {
@@ -48,19 +48,19 @@ const Theme: Themes = {
                 background: '#666',
                 backgroundHover: '#888',
                 backgroundActive: '#777',
-                border: '#888'
+                border: '#888',
             },
             checkbox: {
                 background: '#ddd',
                 shadowHover: '#666',
                 shadowActive: '#666',
-                disabled: '#666'
+                disabled: '#666',
             },
             dropdown: {
                 background: '#ddd',
                 shadowHover: '#777',
-                disabled: '#777'
-            }
+                disabled: '#777',
+            },
         },
         light: {
             background: '#fff',
@@ -69,41 +69,41 @@ const Theme: Themes = {
                 background: '#ddd',
                 backgroundHover: '#bbb',
                 backgroundActive: '#ccc',
-                border: '#eee'
+                border: '#eee',
             },
             checkbox: {
                 background: '#bbb',
                 shadowHover: '#bbb',
                 shadowActive: '#ccc',
-                disabled: '#bbb'
+                disabled: '#bbb',
             },
             dropdown: {
                 background: '#bbb',
                 shadowHover: '#ccc',
-                disabled: '#ccc'
-            }
-        }
+                disabled: '#ccc',
+            },
+        },
     },
     font: {
         default: {
             family: 'OpenSans',
             size: {
                 main: '24px',
-                version: '12px'
-            }
+                version: '12px',
+            },
         },
         dyslexic: {
             family: 'OpenDyslexic',
             size: {
                 main: '20px',
-                version: '12px'
-            }
-        }
+                version: '12px',
+            },
+        },
     },
     accessibility: {
         contrast: 'contrast(1.5)',
         invert: 'invert(1)',
-    }
+    },
 };
 
 function getColor(): ThemeColor {
@@ -129,8 +129,4 @@ function getAccessibility(): string {
     return filter.join(' ');
 }
 
-export {
-    getColor,
-    getFont,
-    getAccessibility
-};
+export { getColor, getFont, getAccessibility };

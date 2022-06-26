@@ -11,13 +11,8 @@
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "typeRoots": [
-      "./types/"
-    ],
     "jsx": "react-jsx",
-    "jsxImportSource": "preact"
+    "jsxImportSource": "react"
   },
-  "include": [
-    "**/*"
-  ]
+  "include": ["**/*"]
 }

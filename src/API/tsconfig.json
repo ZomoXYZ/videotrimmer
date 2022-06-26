@@ -11,11 +11,7 @@
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "typeRoots": [
-      "./types/"
-    ]
+    "typeRoots": ["./types/"]
   },
-  "include": [
-    "**/*"
-  ]
+  "include": ["**/*"]
 }

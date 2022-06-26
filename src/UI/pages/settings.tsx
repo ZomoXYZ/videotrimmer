@@ -1,9 +1,3 @@
-import { PageProps } from '../types/component';
-
-export default function Settings({}: PageProps<{}>) {
-	return (
-		<div>
-			penis
-		</div>
-	);
+export default function Settings() {
+	return <div>penis</div>;
 }
