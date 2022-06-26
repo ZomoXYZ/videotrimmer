@@ -4,7 +4,7 @@ import Icons from "../components/icon";
 import Version from "../components/version";
 import { getColor, getFont } from "../styles/theme";
 
-export default function Main() {
+export default function () {
     const Color = getColor(),
         Font = getFont();
 
@@ -12,7 +12,7 @@ export default function Main() {
         <div>
             <div>Drag Video To Edit</div>
             <div>or</div>
-            <Button type="file">Click to Choose File</Button>
+            <Button type="file" accept="video/*">Click to Choose File</Button>
             <Version
                 className={css`
                     position: fixed;
@@ -23,11 +23,11 @@ export default function Main() {
             />
             <Button
                 className={css`
-                position: fixed;
-                bottom: 10px;
-                right: 10px;
-                padding: 4px;
-            `}
+                    position: fixed;
+                    bottom: 10px;
+                    right: 10px;
+                    padding: 4px;
+                `}
             >
                 <Icons.Cog
                     className={css`
