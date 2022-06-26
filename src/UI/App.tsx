@@ -58,7 +58,7 @@ export default function () {
 
     return (
         <AppContainer>
-            <HashRouter>
+            {/* <HashRouter>
                 <Routes>
                     <Route path="/" element={<Main />} />
                     <Route path="/error" element={<Error />} />
@@ -66,7 +66,8 @@ export default function () {
                     <Route path="/progress" element={<Progress />} />
                     <Route path="/settings" element={<Settings />} />
                 </Routes>
-            </HashRouter>
+            </HashRouter> */}
+            <Main />
         </AppContainer>
     );
 }
