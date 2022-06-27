@@ -7,6 +7,7 @@ import { getColor, getFont } from "../styles/theme";
 import { DropzoneState, useDropzone } from 'react-dropzone'
 import Editor from "./editor";
 import { ElectronFile } from "../types/electron";
+import { Page } from "../styles/page";
 
 export default function () {
 
@@ -19,26 +20,27 @@ export default function () {
         }
     }, [])
 
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, noClick: true })
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, noClick: true, noKeyboard: true }) //TODO useFsAccessApi: true
 
     return (
-        <div {...getRootProps()}>
+        <Page {...getRootProps()}>
             {(() => {
-                if (isDragActive) {
-                    return <Hovering />
-                }
                 if (editorFile) {
                     return <Editor file={editorFile} />
                 }
                 return <MainDisplay getInputProps={getInputProps} />
             })()}
-        </div>
+            {isDragActive && <Hovering />}
+        </Page>
     );
 }
 
 function Hovering() {
+    const { background } = getColor();
     return (
-        <div>Release To Edit</div>
+        <Page style={{ background }}>
+            <div>Release To Edit</div>
+        </Page>
     )
 }
 

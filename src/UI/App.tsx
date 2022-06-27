@@ -1,10 +1,5 @@
-import { HashRouter, Route, Routes } from "react-router-dom";
 import styled from "@emotion/styled";
 import Main from "./pages/main";
-import Error from "./pages/error";
-import Editor from "./pages/editor";
-import Progress from "./pages/progress";
-import Settings from "./pages/settings";
 import { getAccessibility, getColor, getFont } from "./styles/theme";
 import "./styles/fonts.css";
 import { css } from "@emotion/css";
@@ -16,6 +11,7 @@ export default function () {
 
     document.body.classList.add(css`
         background: ${Color.background};
+        margin: 0;
     `)
 
     const AppContainer = styled.div`
@@ -24,7 +20,6 @@ export default function () {
         font-size: ${Font.size.main};
         filter: ${Filter};
 
-        margin: 0;
         width: 100%;
         height: 100%;
         box-sizing: inherit;
@@ -39,20 +34,6 @@ export default function () {
         *::before,
         *::after {
             box-sizing: inherit;
-        }
-
-        > div {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            box-sizing: border-box;
-            padding: 0 15px;
         }
     `;
 

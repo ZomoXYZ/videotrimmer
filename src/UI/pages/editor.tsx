@@ -1,4 +1,5 @@
 import { useFFProbe } from "../api/ffprobe";
+import { EditorMain } from "../editor";
 import { ElectronFile } from "../types/electron";
 
 export default function ({ file }: { file: ElectronFile }) {
@@ -10,9 +11,7 @@ export default function ({ file }: { file: ElectronFile }) {
 
 	console.log(ffprobe)
 	return (
-		<div>
-			<div>{file.name}</div>
-		</div>
+		<EditorMain file={file} ffprobe={ffprobe} />
 	);
 }
 
