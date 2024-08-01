@@ -1,0 +1,29 @@
+steps
+
+- Loading...
+< ok
+? ffmpeg
+  - Loading{
+      title: Downloading Binaries...
+      steps: however many binaries need to download
+    }
+    repeat LoadingStatus{
+      name: ffmpeg/ffprobe
+      step: n
+      percent: n
+    }
+- Main Screen
+  < video file
+- Video Edit
+  < form data
+- Loading{
+    title: Processing Video...
+    steps: however many binaries need to download
+  }
+  repeat LoadingStatus{
+    name: blah blah blah
+    step: n
+    percent: n
+    log: log to append
+  }
+    

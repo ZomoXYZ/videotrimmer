@@ -1,13 +1,16 @@
-const { build } = require("esbuild"),
-    args = require("command-line-args")([
-        { name: "watch", alias: "w", type: Boolean, defaultValue: false },
-        { name: "bundle", alias: "b", type: Boolean, defaultValue: false },
-        { name: "minify", alias: "m", type: Boolean, defaultValue: false },
-        { name: "sourcemap", alias: "s", type: Boolean, defaultValue: false },
-    ]);
+import { build as esBuild } from "esbuild";
+import { build as viteBuild } from "vite";
+import CLIArgs from "command-line-args";
+
+const args = CLIArgs([
+    { name: "watch", alias: "w", type: Boolean, defaultValue: false },
+    { name: "bundle", alias: "b", type: Boolean, defaultValue: false },
+    { name: "minify", alias: "m", type: Boolean, defaultValue: false },
+    { name: "sourcemap", alias: "s", type: Boolean, defaultValue: false },
+]);
 
 // API
-build({
+esBuild({
     entryPoints: ["src/API/main.ts"],
 
     target: "node16",
@@ -17,7 +20,12 @@ build({
     outdir: "dist/API",
 
     bundle: false,
-    watch: args.watch,
+    // watch: args.watch,
     minify: args.minify,
     sourcemap: args.sourcemap,
 });
+
+// UI
+viteBuild({
+
+})
