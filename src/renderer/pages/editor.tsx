@@ -1,22 +1,59 @@
-import { useFFProbe } from '../api/ffprobe'
 import { EditorMain } from '../editor'
-import { ElectronFile } from '../types/electron'
+import Error from './error'
+import { useAsync } from 'react-async'
 
-export default function ({ file }: { file: ElectronFile }) {
-	const ffprobe = useFFProbe(file)
-
-	if (ffprobe === null) {
-		return <Processing />
-	}
-
-	console.log(ffprobe)
+function Processing() {
+	//TODO clean
 	return (
-		<EditorMain file={file} ffprobe={ffprobe} />
+		<div>Processing Video</div>
 	)
 }
 
-function Processing() {
+async function initFile(path: string) {
+	if (!electronAPI) {
+		throw 'Cannot access the Electron API'
+	}
+	return await electronAPI.initFile(path)
+}
+
+export default function ({ file }: { file: File }) {
+	// const { data, error, isPending } = useAsync(() => initFile(file.path))
+	// const { data, error, isPending } = useAsync({ promiseFn: () => initFile(file.path) })
+	const state = useAsync({
+		promiseFn: () => initFile(file.path),
+		watch: file.path,
+		onResolve: d => console.log('GOT DATA', d),
+		onReject: e => console.error(e),
+		onCancel: () => console.error('PROMISE CANCELLED'),
+	})
+	// const state = useAsync(() => initFile(file.path), [file])
+
+	// useEffect(() => {
+	// 	initFile(file.path).then(d => console.log('GOT DATA', d)).catch(e => console.error(e))
+	// }, [])
+
+	// useEffect(() => {
+	// 	state.promise.then(d => console.log('GOT DATA', d)).catch(e => console.error(e))
+	// }, [state])
+
+	console.log(state)
+
+	if (state.error) {
+		return <Error message={state.error.toString()} />
+	}
+
+	if (state.isPending) {
+		return <Processing />
+	}
+
+	if (state.data) {
+		return (
+			<EditorMain file={file} ffprobe={state.data} />
+		)
+	}
+
+	//TODO clean
 	return (
-		<div>Processing Video</div>
+		<div>ASYNC IN UNKNOWN STATE</div>
 	)
 }

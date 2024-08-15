@@ -1,5 +1,6 @@
 import { BrowserWindow, ipcMain } from 'electron'
 import path from 'path'
+import ffprobe from './ffprobe'
 
 export enum ScreenState {
     Blank,
@@ -43,17 +44,12 @@ export function createWindow() {
 
 // should correlate with preload.ts
 export function initIpcHandlers() {
-    ipcMain.handle(
-        'initFile',
-        (e: Electron.IpcMainInvokeEvent, path: string) => {
-            // TODO run ffprobe
-            // return data or error
-            return null
-        }
+    ipcMain.handle('initFile', (_: Electron.IpcMainInvokeEvent, path: string) =>
+        ffprobe(path)
     )
     ipcMain.handle(
         'processFile',
-        (e: Electron.IpcMainInvokeEvent, formData: FormData) => {
+        (_: Electron.IpcMainInvokeEvent, formData: FormData) => {
             // TODO run ffmpeg
             // TODO return job ID
             return null

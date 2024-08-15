@@ -3,14 +3,19 @@ import * as fs from 'fs'
 import isElectronSquirrelStartup from 'electron-squirrel-startup'
 import { createWindow, initIpcHandlers } from './api/window'
 import { getAppDataPath } from './api/util'
+import { ffmpegPath, ffprobePath } from 'ffmpeg-ffprobe-static'
 
-//create appdata if not there
-if (!fs.existsSync(getAppDataPath())) fs.mkdirSync(getAppDataPath())
-
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
+// handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (isElectronSquirrelStartup) {
     app.quit()
 }
+
+// set environment variables for fluent-ffmpeg
+process.env.FFMPEG_PATH = ffmpegPath ?? undefined
+process.env.FFPROBE_PATH = ffprobePath ?? undefined
+
+// create appdata if not there
+if (!fs.existsSync(getAppDataPath())) fs.mkdirSync(getAppDataPath())
 
 // events
 ipcMain.on('exit', (_event, arg) => {

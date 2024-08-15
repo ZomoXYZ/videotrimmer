@@ -6,34 +6,7 @@ import Version from '../components/version'
 import { getColor, getFont } from '../styles/theme'
 import { DropzoneState, useDropzone } from 'react-dropzone'
 import Editor from './editor'
-import { ElectronFile } from '../types/electron'
 import { Page } from '../styles/page'
-
-export default function () {
-
-    const [editorFile, setEditorFile] = useState<ElectronFile | null>(null)
-
-    const onDrop = useCallback((acceptedFiles: File[]) => {
-        const files = acceptedFiles.filter(file => file.type.split('/')[0] === 'video') as ElectronFile[]
-        if (files.length > 0) {
-            setEditorFile(files[0])
-        }
-    }, [])
-
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, noClick: true, noKeyboard: true }) //TODO useFsAccessApi: true
-
-    return (
-        <Page {...getRootProps()}>
-            {(() => {
-                if (editorFile) {
-                    return <Editor file={editorFile} />
-                }
-                return <MainDisplay getInputProps={getInputProps} />
-            })()}
-            {isDragActive && <Hovering />}
-        </Page>
-    )
-}
 
 function Hovering() {
     const { background } = getColor()
@@ -77,5 +50,25 @@ function MainDisplay({ getInputProps }: { getInputProps: DropzoneState['getInput
                 />
             </Button>
         </Fragment>
+    )
+}
+
+export default function Main() {
+    const [editorFile, setEditorFile] = useState<File | null>(null)
+
+    const onDrop = useCallback((acceptedFiles: File[]) => {
+        const files = acceptedFiles.filter(file => file.type.split('/')[0] === 'video')
+        if (files.length > 0) {
+            setEditorFile(files[0])
+        }
+    }, [])
+
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, noClick: true, noKeyboard: true })
+
+    return (
+        <Page {...getRootProps()}>
+            {editorFile ? <Editor file={editorFile} /> : <MainDisplay getInputProps={getInputProps} />}
+            {isDragActive && <Hovering />}
+        </Page>
     )
 }

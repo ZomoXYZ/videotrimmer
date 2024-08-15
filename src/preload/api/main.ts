@@ -1,7 +1,8 @@
 import { ipcRenderer } from 'electron'
+import { FfprobeData } from 'fluent-ffmpeg'
 
 export function initFile(path: string) {
-    ipcRenderer.invoke('initFile', path)
+    return ipcRenderer.invoke('initFile', path) as Promise<FfprobeData>
 }
 
 export function processFile(formData: FormData) {

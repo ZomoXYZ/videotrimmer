@@ -1,4 +1,4 @@
-export default function Error() {
+export default function Error({ message }: { message: string }) {
 	return (
 		<div>
 			<div>
@@ -6,7 +6,7 @@ export default function Error() {
 				<div className="small">Click here to open the console</div>
 			</div>
 			<div>
-				<pre></pre>
+				<pre>{message}</pre>
 			</div>
 		</div>
 	)

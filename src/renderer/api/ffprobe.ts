@@ -8,7 +8,7 @@ import {
 import { ElectronFile } from '../types/electron'
 import { useEffect, useState } from 'react'
 
-export function useFFProbe(file: ElectronFile) {
+function useFFProbe(file: ElectronFile) {
     const [data, setData] = useState<FFProbeData | null>(null)
 
     useEffect(() => {
@@ -190,8 +190,8 @@ function getStreamsData(streams: any[] = []) {
 type StreamDataVal<T> = T extends 'video'
     ? FFProbeVideoStream
     : T extends 'audio'
-    ? FFProbeAudioStream
-    : any;
+      ? FFProbeAudioStream
+      : any
 
 //function to create an objecy of video data
 function getStreamData<T extends keyof FFProbeStreamsNoPrimary>(
